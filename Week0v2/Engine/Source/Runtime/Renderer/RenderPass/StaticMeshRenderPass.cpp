@@ -262,7 +262,6 @@ void FStaticMeshRenderPass::UpdateLightConstants()
     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
 
     FLightingConstants LightConstant;
-    uint32 DirectionalLightCount = 0;
     uint32 PointLightCount = 0;
     uint32 SpotLightCount = 0;
 
@@ -304,17 +303,21 @@ void FStaticMeshRenderPass::UpdateLightConstants()
                 SpotLightCount++;
                 continue;
             }
-            LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
+            LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
+            LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
+            LightConstant.DirLight.Direction = DirectionalLightComp->GetOwner()->GetActorForwardVector();
+
+            /*LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
             LightConstant.DirLights[DirectionalLightCount].Intensity = DirectionalLightComp->GetIntensity();
             LightConstant.DirLights[DirectionalLightCount].Direction = DirectionalLightComp->GetOwner()->GetActorForwardVector();
-            DirectionalLightCount++;
+            DirectionalLightCount++;*/
             continue;
         }
+
     }
     //UE_LOG(LogLevel::Error, "Point : %d, Spot : %d Dir : %d", PointLightCount, SpotLightCount, DirectionalLightCount);
     LightConstant.NumPointLights = PointLightCount;
     LightConstant.NumSpotLights = SpotLightCount;
-    LightConstant.NumDirectionalLights = DirectionalLightCount;
     
     renderResourceManager->UpdateConstantBuffer(TEXT("FLightingConstants"), &LightConstant);
 }

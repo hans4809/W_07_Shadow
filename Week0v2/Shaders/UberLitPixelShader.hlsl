@@ -91,8 +91,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     TotalLight += EmissiveColor; // 자체 발광  
 
     // 방향광 처리  s
-    for(uint i=0; i<NumDirectionalLights; ++i)  
-        TotalLight += CalculateDirectionalLight(DirLights[i], Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
+    TotalLight += CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
 
     // 점광 처리  
     for(uint j=0; j<NumPointLights; ++j)

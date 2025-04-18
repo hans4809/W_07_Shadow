@@ -2,7 +2,6 @@
 #include "ShaderHeaders/UberLitCommon.hlsli"
 
 
-
 struct VS_INPUT
 {
     float4 position : POSITION; // 버텍스 위치
@@ -48,8 +47,7 @@ PS_INPUT mainVS(VS_INPUT input)
         return output;
     }
     // 정점 색상 계산 (디퓨즈 + 스페큘러)
-    for(uint i=0; i<NumDirectionalLights; ++i)  
-        totalLight += CalculateDirectionalLight(DirLights[i], normal, viewDir, input.color.rgb,SpecularScalar,SpecularColor);
+    totalLight += CalculateDirectionalLight(DirLight, normal, viewDir, input.color.rgb,SpecularScalar,SpecularColor);
 
     // 점광 처리  
     for(uint j=0; j<NumPointLights; ++j)  

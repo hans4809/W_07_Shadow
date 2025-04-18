@@ -520,27 +520,46 @@ struct FFrustum
 };
 
 // !NOTE : 최대 광원 수 제한
-#define MAX_DIRECTIONAL_LIGHTS 4
-#define MAX_POINT_LIGHTS 16
+struct FAmbientLight
+{
+    FVector4 Color;
 
+    float Intensity;
+    FVector pad;
+};
 struct FDirectionalLight
 {
-    FVector Direction;
-    float Intensity;
-
     FVector4 Color;
+
+    float Intensity;
+    FVector Direction;
 };
 
 struct FPointLight
 {
-    FVector Position;
-    float Radius;
-
     FVector4 Color;
 
     float Intensity;
+    FVector Position;
+
+    float Radius;
     float AttenuationFalloff;
     FVector2D Padd;
+};
+struct FSpotLight
+{
+    FVector4 Color;
+
+    float Intensity;
+    FVector Position;
+
+    FVector Direction;
+    float InnerAngle;
+
+    float OuterAngle;
+    float Radius;
+    float AttenuationFalloff;
+    float pad;
 };
 
 struct FComputeConstants{
@@ -550,17 +569,4 @@ struct FComputeConstants{
     float screenHeight;
     int tileCountX;
     int tileCountY;
-};
-struct FSpotLight
-{
-    FVector Position;
-    float Intensity;
-
-    FVector4 Color;
-
-    FVector Direction;
-    float InnerAngle;
-
-    float OuterAngle;
-    FVector pad;
 };

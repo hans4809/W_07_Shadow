@@ -1,60 +1,6 @@
 #pragma kernel TileCulling
+#include "ShaderHeaders/UberLitCommon.hlsli"
 
-#define MAX_POINTLIGHT_COUNT 16
-
-struct FDirectionalLight
-{
-    float3 Direction;
-    float Intensity;
-    float4 Color;
-};
-
-struct FPointLight
-{
-    float3 Position;
-    float Radius;
-    
-    float4 Color;
-    
-    float Intensity;
-    float AttenuationFalloff;
-    float2 pad;
-};
-
-struct FSpotLight
-{
-    float3 Position;
-    float Intensity;
-    
-    float4 Color;
-    
-    float3 Direction;
-    float InnerAngle;
-    
-    float OuterAngle;
-    float3 pad;
-};
-
-cbuffer FComputeConstants : register(b0){
-    row_major matrix InverseView;
-    row_major matrix InverseProj;
-    float screenWidth;
-    float screenHeight;
-    int numTilesX;
-    int numTilesY;
-}
-
-cbuffer FLightingConstants : register(b1)
-{
-    uint NumDirectionalLights;
-    uint NumPointLights;
-    uint NumSpotLights;
-    float pad;
-
-    FDirectionalLight DirLights[4];
-    FPointLight PointLights[16];
-    FSpotLight SpotLights[8];
-};
 
 // 출력 버퍼: 타일별 영향받는 광원 인덱스 리스트
 RWStructuredBuffer<uint> TileLightIndices : register(u0);
@@ -84,8 +30,8 @@ bool IntersectRaySphere(float3 rayOrigin, float3 rayDir, float3 sphereCenter, fl
 }
 
 // 타일 크기 설정
-static const uint TILE_SIZE_X = 16;
-static const uint TILE_SIZE_Y = 16;
+/*static const uint TILE_SIZE_X = 16;
+static const uint TILE_SIZE_Y = 16;*/
 
 // 쓰레드 그룹 크기 설정
 [numthreads(TILE_SIZE_X, TILE_SIZE_Y, 1)]

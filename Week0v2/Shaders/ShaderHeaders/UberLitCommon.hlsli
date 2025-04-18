@@ -4,40 +4,56 @@
 // 조명 구조체 정의
 // ---------------------------------------------
 // 최대 라이트 수 정의 (컴파일 타임 상수)
-#define NUM_POINT_LIGHT 4
-#define NUM_SPOT_LIGHT 4
+#define NUM_POINT_LIGHT 16
+#define NUM_SPOT_LIGHT 16
 //tile 기반 최대치
 #define MAX_POINTLIGHT_COUNT 16
 
 // 타일 크기 (조명 타일링 기준)
 #define TILE_SIZE_X 16
 #define TILE_SIZE_Y 16
+
+struct FAmbientLight
+{
+    float4 Color;
+
+    float Intensity;
+    float3 pad;
+};
 struct FDirectionalLight
 {
-    float3 Direction;
-    float Intensity;
     float4 Color;
+    
+    float Intensity;
+    float3 Direction;
 };
 
 struct FPointLight
 {
-    float3 Position;
-    float Radius;
     float4 Color;
+    
     float Intensity;
+    float3 Position;
+
+    float Radius;
     float AttenuationFalloff;
     float2 pad;
 };
 
 struct FSpotLight
 {
-    float3 Position;
-    float Intensity;
     float4 Color;
+
+    float Intensity;
+    float3 Position;
+
     float3 Direction;
     float InnerAngle;
+
     float OuterAngle;
-    float3 pad;
+    float Radius;
+    float AttenuationFalloff;
+    float pad;
 };
 
 // ---------------------------------------------
@@ -163,14 +179,13 @@ cbuffer FMaterialConstants : register(b0)
 };
 cbuffer FLightingConstants : register(b1)
 {
-    uint NumDirectionalLights;
     uint NumPointLights;
     uint NumSpotLights;
-    float pad;
+    float2 pad;
 
-    FDirectionalLight DirLights[4];
-    FPointLight PointLights[16];
-    FSpotLight SpotLights[8];
+    FDirectionalLight DirLight;
+    FPointLight PointLights[NUM_POINT_LIGHT];
+    FSpotLight SpotLights[NUM_SPOT_LIGHT];
 };
 
 cbuffer FFlagConstants : register(b2)
