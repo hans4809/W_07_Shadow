@@ -1,14 +1,7 @@
 #include "ShaderHeaders/GSamplers.hlsli"
 #include "ShaderHeaders/UberLitCommon.hlsli"
 
-cbuffer FMatrixConstants : register(b0)
-{
-    row_major float4x4 Model;
-    row_major float4x4 ViewProj;
-    row_major float4x4 MInverseTranspose;
-    bool isSelected;
-    float3 pad0;
-};
+
 
 struct VS_INPUT
 {
@@ -28,49 +21,6 @@ struct PS_INPUT
     float3 normal : TEXCOORD1;
     float3x3 TBN : TEXCOORD3;
 };
-
-cbuffer FLightingConstants : register(b1)
-{
-    uint NumDirectionalLights;
-    uint NumPointLights;
-    uint NumSpotLights;
-    float pad;
-
-    FDirectionalLight DirLights[4];
-    FPointLight PointLights[16];
-    FSpotLight SpotLights[8];
-};
-
-cbuffer FFlagConstants : register(b2)
-{
-    uint IsLit;
-    uint IsNormal;
-    float2 flagPad0;
-}
-
-cbuffer FCameraConstant : register(b3)
-{
-    matrix ViewMatrix;
-    matrix ProjMatrix;
-    matrix ViewProjMatrix;
-    
-    float3 CameraPos;
-    float NearPlane;
-    float3 CameraForward;
-    float FarPlane;
-};
-
-cbuffer FMaterialConstants : register(b4)
-{
-    float3 DiffuseColor;
-    float TransparencyScalar;
-    float3 MatAmbientColor;
-    float DensityScalar;
-    float3 SpecularColor;
-    float SpecularScalar;
-    float3 EmissiveColor;
-    float MaterialPad0;
-}
 
 PS_INPUT mainVS(VS_INPUT input)
 {
