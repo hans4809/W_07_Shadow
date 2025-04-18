@@ -3,7 +3,15 @@
 // ---------------------------------------------
 // 조명 구조체 정의
 // ---------------------------------------------
+// 최대 라이트 수 정의 (컴파일 타임 상수)
+#define NUM_POINT_LIGHT 4
+#define NUM_SPOT_LIGHT 4
+//tile 기반 최대치
+#define MAX_POINTLIGHT_COUNT 16
 
+// 타일 크기 (조명 타일링 기준)
+#define TILE_SIZE_X 16
+#define TILE_SIZE_Y 16
 struct FDirectionalLight
 {
     float3 Direction;

@@ -1,9 +1,6 @@
 #include "ShaderHeaders/GSamplers.hlsli"
 #include "ShaderHeaders/UberLitCommon.hlsli"
 
-#define NUM_POINT_LIGHT 4
-#define NUM_SPOT_LIGHT 4
-
 cbuffer FMatrixConstants : register(b0)
 {
     row_major float4x4 Model;

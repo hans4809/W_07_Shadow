@@ -5,8 +5,6 @@ Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
 
-#define MAX_POINTLIGHT_COUNT 16
-
 cbuffer FMaterialConstants : register(b0)
 {
     float3 DiffuseColor;
@@ -90,8 +88,8 @@ struct PS_OUTPUT
 };
 
 // 타일 크기 설정
-static const uint TILE_SIZE_X = 16;
-static const uint TILE_SIZE_Y = 16;
+/*static const uint TILE_SIZE_X = 16;
+static const uint TILE_SIZE_Y = 16;*/
 
 PS_OUTPUT mainPS(PS_INPUT input)
 {
