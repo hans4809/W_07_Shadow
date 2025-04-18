@@ -381,7 +381,11 @@ void PropertyEditorPanel::Render()
                 {
                     SpotLight->SetRadius(radiusVal);
                 }
-
+                float falloffVal = SpotLight->GetAttenuationFalloff();
+                if (ImGui::SliderFloat("Falloff", &falloffVal, 0.0001f, 100.0f,"%.4f"))
+                {
+                    SpotLight->SetAttenuationFallOff(falloffVal);
+                }
                 ImGui::Spacing();
             }
         }

@@ -284,6 +284,9 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
             LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
             LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
+            LightConstant.SpotLights[SpotLightCount].Radius = SpotLightComp->GetRadius();
+            LightConstant.SpotLights[SpotLightCount].AttenuationFalloff = SpotLightComp->GetAttenuationFalloff();
+
             SpotLightCount++;
             continue;
         }
@@ -296,6 +299,7 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetComponentLocation();
             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
+
             PointLightCount++;
             continue;
         }

@@ -117,8 +117,51 @@ float3 CalculatePointLight(
     return (Diffuse + specularColor) * Attenuation;
 #endif
 }
-
 float3 CalculateSpotLight(
+    FSpotLight Light,
+    float3 WorldPos,
+    float3 Normal,
+    float3 ViewDir,
+    float3 Albedo,
+    float SpecularScalar,
+    float3 SpecularColor)
+{
+    float3 LightDir = Light.Position - WorldPos;
+    float Distance = length(LightDir);
+    LightDir = normalize(LightDir);
+
+    float3 SpotDirection = normalize(-Light.Direction);
+
+    float CosInner = cos(Light.InnerAngle);
+    float CosOuter = cos(Light.OuterAngle);
+    float CosAngle = dot(SpotDirection, LightDir);
+
+    if (Distance > Light.Radius || CosAngle < CosOuter)
+        return float3(0, 0, 0);
+
+    float SpotAttenuation = saturate((CosAngle - CosOuter) / (CosInner - CosOuter));
+
+    // 변경된 거리 기반 감쇠
+    float DistanceAttenuation = Light.Intensity / (1.0 + Light.AttenuationFalloff * Distance * Distance);
+    //Radius 기반 감쇠(일단 제외)
+    //DistanceAttenuation *= 1.0 - smoothstep(0.0, Light.Radius, Distance);
+
+    float NdotL = max(dot(Normal, SpotDirection), 0.0);
+    float3 Diffuse = Light.Color.rgb * Albedo * NdotL;
+
+#if defined(LIGHTING_MODEL_LAMBERT)
+    return Diffuse * SpotAttenuation * DistanceAttenuation;
+#else
+    float3 HalfVec = normalize(SpotDirection + ViewDir);
+    float NdotH = max(dot(Normal, HalfVec), 0.0);
+    float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;
+    float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
+
+    return (Diffuse + specularColor) * SpotAttenuation * DistanceAttenuation;
+#endif
+}
+
+/*float3 CalculateSpotLight(
     FSpotLight Light,
     float3 WorldPos,
     float3 Normal,
@@ -134,27 +177,29 @@ float3 CalculateSpotLight(
     float CosInner = cos(Light.InnerAngle);
     float CosOuter = cos(Light.OuterAngle);
     float CosAngle = dot(SpotDirection, LightDir);
-
-    if (CosAngle < CosOuter)
+    
+    if (/*Distance > Light.Radius || #1#CosAngle < CosOuter)
         return float3(0, 0, 0);
-
+    
     float SpotAttenuation = saturate((CosAngle - CosOuter) / (CosInner - CosOuter));
-    float DistanceAttenuation = 1.0 / (1.0 + Distance * Distance * 0.01);
+    float DistanceAttenuation = Light.Intensity / (1.0 + Light.AttenuationFalloff * Distance * Distance);
+    DistanceAttenuation *= 1.0 - smoothstep(0.0, Light.Radius, Distance);
+
 
     float NdotL = max(dot(Normal, SpotDirection), 0.0);
     float3 Diffuse = Light.Color.rgb * Albedo * NdotL;
 
 #if defined(LIGHTING_MODEL_LAMBERT)
-    return Diffuse * Light.Intensity * SpotAttenuation * DistanceAttenuation;
+    return Diffuse * SpotAttenuation * DistanceAttenuation;
 #else
     float3 HalfVec = normalize(SpotDirection + ViewDir);
     float NdotH = max(dot(Normal, HalfVec), 0.0);
     float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;
     float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
 
-    return (Diffuse + specularColor) * Light.Intensity * SpotAttenuation * DistanceAttenuation;
+    return (Diffuse + specularColor) * SpotAttenuation * DistanceAttenuation;
 #endif
-}
+}*/
 /*cbuffer FMaterialConstants : register(b0)
 {
     float3 DiffuseColor;
