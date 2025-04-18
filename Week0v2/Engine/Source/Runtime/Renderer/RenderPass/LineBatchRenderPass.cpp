@@ -8,6 +8,8 @@
 #include "Engine/World.h"
 #include <Math/JungleMath.h>
 
+#include "Actors/Light.h"
+#include "Components/LightComponents/DirectionalLightComponent.h"
 #include "Components/LightComponents/PointLightComponent.h"
 #include "Components/LightComponents/SpotLightComponent.h"
 
@@ -97,31 +99,43 @@ void FLineBatchRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportCl
             {
                 if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Comp))
                 {
-                    const FMatrix Model = JungleMath::CreateModelMatrix(SpotLight->GetComponentLocation(), SpotLight->GetComponentRotation(),
-                        SpotLight->GetComponentScale());
-                    if (SpotLight->GetOuterConeAngle() > 0) 
+                    const FMatrix Model = JungleMath::CreateModelMatrix(
+                        SpotLight->GetComponentLocation(),
+                        SpotLight->GetComponentRotation(),
+                        SpotLight->GetComponentScale()
+                    );
+
+                    const float ConeLength = SpotLight->GetRadius();
+
+                    if (SpotLight->GetOuterConeAngle() > 0)
                     {
+                        float OuterRadius = tan(SpotLight->GetOuterConeAngle()) * ConeLength;
+
                         UPrimitiveBatch::GetInstance().AddCone(
                             SpotLight->GetComponentLocation(),
-                            tan(SpotLight->GetOuterConeAngle()) * 15.0f,
-                            15.0f,
+                            OuterRadius,
+                            ConeLength,
                             15,
                             SpotLight->GetLightColor(),
                             Model
                         );
                     }
+
                     if (SpotLight->GetInnerConeAngle() > 0)
                     {
+                        float InnerRadius = tan(SpotLight->GetInnerConeAngle()) * ConeLength;
+
                         UPrimitiveBatch::GetInstance().AddCone(
                             SpotLight->GetComponentLocation(),
-                            tan(SpotLight->GetInnerConeAngle()) * 15.0f,
-                            15.0f,
+                            InnerRadius,
+                            ConeLength,
                             15,
                             SpotLight->GetLightColor(),
                             Model
                         );
                     }
                 }
+
                 else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Comp))
                 {
                     FVector Right = DirectionalLight->GetOwner()->GetActorRightVector();
@@ -135,7 +149,7 @@ void FLineBatchRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportCl
                         );
                     }
                 }
-                if (UPointLightComponent* PointLight = Cast< UPointLightComponent>(Comp))
+                else if (UPointLightComponent* PointLight = Cast< UPointLightComponent>(Comp))
                 {
                     if (PointLight->GetRadius() > 0)
                     {

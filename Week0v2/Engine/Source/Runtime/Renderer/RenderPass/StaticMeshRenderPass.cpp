@@ -275,9 +275,21 @@ void FStaticMeshRenderPass::UpdateLightConstants()
         {
             continue;
         }
-        UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp);
+        
+        if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp))
+        {
+            LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
+            LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
+            LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
+            LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
+            LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
+            LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
+            SpotLightCount++;
+            continue;
+        }
+        
 
-        if (PointLightComp)
+        if (UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp))
         {
             LightConstant.PointLights[PointLightCount].Color = PointLightComp->GetLightColor();
             LightConstant.PointLights[PointLightCount].Intensity = PointLightComp->GetIntensity();
@@ -288,21 +300,9 @@ void FStaticMeshRenderPass::UpdateLightConstants()
             continue;
         }
 
-        UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp);
-        if (DirectionalLightComp)
+        if (UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp))
         {
-            USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(DirectionalLightComp);
-            if (SpotLightComp)
-            {
-                LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
-                LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
-                LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
-                LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
-                LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
-                LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
-                SpotLightCount++;
-                continue;
-            }
+
             LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
             LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
             LightConstant.DirLight.Direction = DirectionalLightComp->GetOwner()->GetActorForwardVector();
