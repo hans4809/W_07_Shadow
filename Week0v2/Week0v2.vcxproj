@@ -210,28 +210,28 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\GameFramework\MovementComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\GameFramework\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\GameFramework\RotatingMovementComponent.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\DirectionalLightComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\LightComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\LightComponentBase.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\PointLightComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\SpotLightComponent.cpp"/>
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\LightComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\LightComponentBase.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\PointLightComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\LightComponents\SpotLightComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\Material\Material.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\Mesh\StaticMesh.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\ExponentialHeightFogComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\HeightFogComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\MeshComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\CubeComp.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\FireBallComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\SkySphereComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\SphereComp.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\StaticMeshComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\PrimitiveComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\QuadTexture.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UBillboardComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UParticleSubUVComp.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTextComponent.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTexture.cpp"/>
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTextUUID.cpp"/>
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\ExponentialHeightFogComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\HeightFogComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\MeshComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\CubeComp.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\FireBallComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\SkySphereComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\SphereComp.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\StaticMeshComponents\StaticMeshComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\PrimitiveComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\QuadTexture.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UBillboardComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UParticleSubUVComp.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTextComponent.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTexture.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\UTextUUID.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\SceneComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\Engine.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\FLoaderOBJ.cpp" />
@@ -549,6 +549,9 @@
     </None>
     <None Include="Shaders\ShaderHeaders\GSamplers.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Shaders\ShaderHeaders\UberLitCommon.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
   </ItemGroup>

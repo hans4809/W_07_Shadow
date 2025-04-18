@@ -1,4 +1,5 @@
 #include "ShaderHeaders/GSamplers.hlsli"
+#include "ShaderHeaders/UberLitCommon.hlsli"
 
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
@@ -24,39 +25,6 @@ cbuffer FConstatntBufferActor : register(b1)
     uint IsSelectedActor;
     float3 padding;
 }
-
-struct FDirectionalLight
-{
-    float3 Direction;
-    float Intensity;
-    float4 Color;
-};
-
-struct FPointLight
-{
-    float3 Position;
-    float Radius;
-    
-    float4 Color;
-    
-    float Intensity;
-    float AttenuationFalloff;
-    float2 pad;
-};
-
-struct FSpotLight
-{
-    float3 Position;
-    float Intensity;
-    
-    float4 Color;
-    
-    float3 Direction;
-    float InnerAngle;
-    
-    float OuterAngle;
-    float3 pad;
-};
 
 cbuffer FLightingConstants : register(b2)
 {
@@ -120,107 +88,6 @@ struct PS_OUTPUT
     float4 color : SV_Target0;
     float4 UUID : SV_Target1;
 };
-
-float3 CalculateDirectionalLight(  
-    FDirectionalLight Light,  
-    float3 Normal,  
-    float3 ViewDir,  
-    float3 Albedo)  
-{  
-    // 광원 방향  
-    float3 LightDir = normalize(-Light.Direction);  
-
-    // 디퓨즈 계산  
-    float NdotL = max(dot(Normal, LightDir), 0.0);  
-    float3 Diffuse = Light.Color.rgb * Albedo * NdotL;  
-
-    // 스페큘러 (Blinn-Phong)  
-    float3 HalfVec = normalize(LightDir + ViewDir);  
-    float NdotH = max(dot(Normal, HalfVec), 0.0);  
-    float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;  
-    float3 specularColor = Light.Color.rgb * Specular * SpecularColor;  
-
-    // 최종 광원 영향  
-    return (Diffuse + specularColor) * Light.Intensity;  
-}
-
-float3 CalculatePointLight(  
-    FPointLight Light,  
-    float3 WorldPos,  
-    float3 Normal,  
-    float3 ViewDir,  
-    float3 Albedo)  
-{  
-    // 광원 거리/방향  
-    float3 LightDir = Light.Position - WorldPos;
-    float Distance = length(LightDir);  
-    LightDir = normalize(LightDir);  
-
-    // 반경 체크  
-    if(Distance > Light.Radius) return float3(0,0,0);  
-
-    // 감쇠 계산  
-    float Attenuation = Light.Intensity / (1.0 + Light.AttenuationFalloff * Distance * Distance);  
-    Attenuation *= 1.0 - smoothstep(0.0, Light.Radius, Distance);  
-
-    // 디퓨즈  
-    float NdotL = max(dot(Normal, LightDir), 0.0);
-    float3 Diffuse = Light.Color.rgb * Albedo * NdotL;
-    //return float3(abs(LightDir));
-    //return float3(NdotL.xxx);
-
-#if LIGHTING_MODEL_LAMBERT
-    return Diffuse * Light.Intensity * Attenuation;
-#endif
-    // 스페큘러  
-    float3 HalfVec = normalize(LightDir + ViewDir);  
-    float NdotH = max(dot(Normal, HalfVec), 0.0);  
-    float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;
-    float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
-
-    return (Diffuse + specularColor) * Light.Intensity * Attenuation;  
-}  
-
-float3 CalculateSpotLight(
-    FSpotLight Light,
-    float3 WorldPos,
-    float3 Normal,
-    float3 ViewDir,
-    float3 Albedo)
-{
-    // 조명 방향 벡터 (광원 위치 → 픽셀)
-    float3 LightDir = normalize(Light.Position - WorldPos);
-    float Distance = length(Light.Position - WorldPos);
-
-    // Spot Light 중심 방향
-    float3 SpotDirection = normalize(-Light.Direction);
-
-    // 각도 감쇠 계산
-    float CosInner = cos(Light.InnerAngle);
-    float CosOuter = cos(Light.OuterAngle);
-    float CosAngle = dot(SpotDirection, LightDir); // 광원 기준 → 픽셀 방향
-
-    if (CosAngle < CosOuter)
-        return float3(0, 0, 0);
-
-    float SpotAttenuation = saturate((CosAngle - CosOuter) / (CosInner - CosOuter));
-    float DistanceAttenuation = (1.0 / (1.0 + Distance * Distance * 0.01)); // 간단 거리 감쇠
-
-    // 디퓨즈
-    float NdotL = max(dot(Normal, SpotDirection), 0.0);
-    float3 Diffuse = Light.Color.rgb * Albedo * NdotL;
-
-#if LIGHTING_MODEL_LAMBERT
-    return Diffuse * Light.Intensity * SpotAttenuation * DistanceAttenuation;
-#endif
-    // 스페큘러 (Blinn-Phong)
-    float3 HalfVec = normalize(SpotDirection + ViewDir);
-    float NdotH = max(dot(Normal, HalfVec), 0.0);
-    float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;
-    float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
-
-    return (Diffuse + specularColor) * Light.Intensity * SpotAttenuation * DistanceAttenuation;
-}
 
 // 타일 크기 설정
 static const uint TILE_SIZE_X = 16;
@@ -293,7 +160,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     // 방향광 처리  s
     for(uint i=0; i<NumDirectionalLights; ++i)  
-        TotalLight += CalculateDirectionalLight(DirLights[i], Normal, ViewDir, baseColor.rgb);  
+        TotalLight += CalculateDirectionalLight(DirLights[i], Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
 
     // 점광 처리  
     for(uint j=0; j<NumPointLights; ++j)
@@ -305,11 +172,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
             break;
         }
         
-        TotalLight += CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb);
+        TotalLight += CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)
-        TotalLight += CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb);
+        TotalLight += CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
     
     // 최종 색상 
     output.color = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);
