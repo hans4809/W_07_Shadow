@@ -13,6 +13,8 @@ USpotLightComponent::USpotLightComponent(const USpotLightComponent& Other)
     : Super(Other)
     , InnerConeAngle(Other.InnerConeAngle)
     , OuterConeAngle(Other.OuterConeAngle)
+    , Radius(Other.Radius)
+    , AttenuationFalloff(Other.AttenuationFalloff)
 {
 
 }
@@ -54,6 +56,8 @@ std::shared_ptr<FActorComponentInfo> USpotLightComponent::GetActorComponentInfo(
 
     Info->InnerConeAngle = InnerConeAngle;
     Info->OuterConeAngle = OuterConeAngle;
+    Info->Radius = Radius;
+    Info->AttenuationFalloff = AttenuationFalloff;
 
     return Info;
 }
@@ -64,4 +68,6 @@ void USpotLightComponent::LoadAndConstruct(const FActorComponentInfo& Info)
     const FSpotlightComponentInfo& PointLightInfo = static_cast<const FSpotlightComponentInfo&>(Info);
     InnerConeAngle = PointLightInfo.InnerConeAngle;
     OuterConeAngle = PointLightInfo.OuterConeAngle;
+    Radius = PointLightInfo.Radius;
+    AttenuationFalloff = PointLightInfo.AttenuationFalloff;
 }
