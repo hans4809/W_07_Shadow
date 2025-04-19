@@ -1,5 +1,9 @@
+struct FLightVP
+{
+    row_major float4x4 LightVP;
+};
 
-StructuredBuffer<row_major float4x4> LightViewProjectionMatrix : register(t0);
+StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t0);
 
 struct GS_INPUT
 {

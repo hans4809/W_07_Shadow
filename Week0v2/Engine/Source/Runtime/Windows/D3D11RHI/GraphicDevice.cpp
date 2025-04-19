@@ -779,7 +779,7 @@ void FGraphicsDevice::ExtractVertexShaderInfo(ID3DBlob* shaderBlob, TArray<FCons
     SAFE_RELEASE(pReflector);
 }
 
-void FGraphicsDevice::ExtractPixelShaderInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos)
+void FGraphicsDevice::ExtractShaderConstantInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos)
 {
     ID3D11ShaderReflection* pReflector = nullptr;
     HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(),

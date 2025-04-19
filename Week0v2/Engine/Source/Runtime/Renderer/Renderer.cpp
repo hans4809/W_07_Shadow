@@ -16,6 +16,8 @@
 #include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/DirectionalShadowMapRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/ShadowMapRenderPass.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
 {
@@ -38,6 +40,11 @@ D3D_SHADER_MACRO FRenderer::EditorGizmoDefines[] =
 D3D_SHADER_MACRO FRenderer::EditorIconDefines[] = 
 {
     {"RENDER_ICON", "1"},
+    {nullptr, nullptr}
+};
+D3D_SHADER_MACRO FRenderer::DirectionalDefines[] =
+{
+    {"DIRECTIONAL_LIGHT", "1"},
     {nullptr, nullptr}
 };
 
@@ -91,6 +98,11 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
 
     CreateVertexPixelShader(TEXT("HeightFog"), nullptr);
     FogRenderPass = std::make_shared<FFogRenderPass>(TEXT("HeightFog"));
+    
+    FString DirShadowMapName = TEXT("ShadowMap");
+    DirShadowMapName += DirectionalDefines->Name;
+    CreateVertexPixelShader(TEXT("ShadowMap"), DirectionalDefines);
+    DirectionalShadowMapRenderPass = std::make_shared<FDirectionalShadowMapRenderPass>(DirShadowMapName);
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -112,6 +124,16 @@ void FRenderer::BindConstantBuffers(const FName InShaderName)
                 Graphics->DeviceContext->VSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
         }
         else if (item.Key.ShaderType == EShaderStage::PS)
+        {
+            if (curConstantBuffer)
+                Graphics->DeviceContext->PSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
+        }
+        else if (item.Key.ShaderType == EShaderStage::GS)
+        {
+            if (curConstantBuffer)
+                Graphics->DeviceContext->PSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
+        }
+        else if (item.Key.ShaderType == EShaderStage::CS)
         {
             if (curConstantBuffer)
                 Graphics->DeviceContext->PSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
@@ -168,19 +190,19 @@ void FRenderer::CreateVertexPixelShader(const FString& InPrefix, D3D_SHADER_MACR
 
     ID3DBlob* VertexShaderBlob = RenderResourceManager->GetVertexShaderBlob(VertexShaderName);
     
-    TArray<FConstantBufferInfo> VertexStaticMeshConstant;
+    TArray<FConstantBufferInfo> VertexConstantInfos;
     ID3D11InputLayout* InputLayout = nullptr;
-    Graphics->ExtractVertexShaderInfo(VertexShaderBlob, VertexStaticMeshConstant, InputLayout);
+    Graphics->ExtractVertexShaderInfo(VertexShaderBlob, VertexConstantInfos, InputLayout);
     RenderResourceManager->AddOrSetInputLayout(VertexShaderName, InputLayout);
 
     ID3DBlob* PixelShaderBlob = RenderResourceManager->GetPixelShaderBlob(PixelShaderName);
-    TArray<FConstantBufferInfo> PixelStaticMeshConstant;
-    Graphics->ExtractPixelShaderInfo(PixelShaderBlob, PixelStaticMeshConstant);
+    TArray<FConstantBufferInfo> PixelConstantInfos;
+    Graphics->ExtractShaderConstantInfo(PixelShaderBlob, PixelConstantInfos);
     
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
-    CreateMappedCB(ShaderStageToCB, VertexStaticMeshConstant, EShaderStage::VS);  
-    CreateMappedCB(ShaderStageToCB, PixelStaticMeshConstant, EShaderStage::PS);
+    CreateMappedCB(ShaderStageToCB, VertexConstantInfos, EShaderStage::VS);  
+    CreateMappedCB(ShaderStageToCB, PixelConstantInfos, EShaderStage::PS);
     
     MappingVSPSInputLayout(Prefix, VertexShaderName, PixelShaderName, VertexShaderName);
     MappingVSPSCBSlot(Prefix, ShaderStageToCB);
@@ -199,16 +221,41 @@ void FRenderer::CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* p
     }
     // 접미사를 각각 붙여서 전체 파일명 생성
     const FString ComputeShaderFile = InPrefix + TEXT("ComputeShader.hlsl");
-    const FString ComputeShaderName = Prefix + TEXT("VertexShader.hlsl");
+    const FString ComputeShaderName = Prefix + TEXT("ComputeShader.hlsl");
     RenderResourceManager->CreateComputeShader(ComputeShaderName, ComputeShaderFile, pDefines);
 
     ID3DBlob* ComputeShaderBlob = RenderResourceManager->GetComputeShaderBlob(ComputeShaderName);
-    TArray<FConstantBufferInfo> PixelStaticMeshConstant;
-    Graphics->ExtractPixelShaderInfo(ComputeShaderBlob, PixelStaticMeshConstant);
+    TArray<FConstantBufferInfo> ComputeConstantInfos;
+    Graphics->ExtractShaderConstantInfo(ComputeShaderBlob, ComputeConstantInfos);
     
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
-    CreateMappedCB(ShaderStageToCB, PixelStaticMeshConstant, EShaderStage::CS);  
+    CreateMappedCB(ShaderStageToCB, ComputeConstantInfos, EShaderStage::CS);  
+}
+
+void FRenderer::CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines)
+{
+    FString Prefix = InPrefix;
+    if (pDefines != nullptr)
+    {
+#if USE_WIDECHAR
+        Prefix += ConvertAnsiToWchar(pDefines->Name);
+#else
+        Prefix += pDefines->Name;
+#endif
+    }
+    // 접미사를 각각 붙여서 전체 파일명 생성
+    const FString GeometryShaderFile = InPrefix + TEXT("GeometryShader.hlsl");
+    const FString GeometryShaderName = Prefix + TEXT("GeometryShader.hlsl");
+    RenderResourceManager->CreateComputeShader(GeometryShaderName, GeometryShaderFile, pDefines);
+
+    ID3DBlob* ComputeShaderBlob = RenderResourceManager->GetComputeShaderBlob(GeometryShaderName);
+    TArray<FConstantBufferInfo> GeometryConstantInfos;
+    Graphics->ExtractShaderConstantInfo(ComputeShaderBlob, GeometryConstantInfos);
+    
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+
+    CreateMappedCB(ShaderStageToCB, GeometryConstantInfos, EShaderStage::GS);  
 }
 
 #pragma region Shader
@@ -407,7 +454,25 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
 
 void FRenderer::MappingVSPSInputLayout(const FName InShaderProgramName, FName VSName, FName PSName, FName InInputLayoutName)
 {
-    ShaderPrograms.Add(InShaderProgramName, std::make_shared<FShaderProgram>(VSName, PSName, InInputLayoutName));
+    ShaderPrograms.Add(InShaderProgramName, std::make_shared<FShaderProgram>(VSName, PSName, TEXT(""), TEXT(""), InInputLayoutName));
+}
+
+
+void FRenderer::MappingCS(const FName InShaderProgramName, FName InCSName)
+{
+    ShaderPrograms.Add(InShaderProgramName, std::make_shared<FShaderProgram>(TEXT(""), TEXT(""), InCSName, TEXT(""), TEXT("")));
+}
+
+void FRenderer::MappingGS(const FName InShaderProgramName, FName InGS)
+{
+    if (ShaderPrograms.Contains(InShaderProgramName))
+    {
+        ShaderPrograms[InShaderProgramName]->SetGSName(InGS);
+    }
+    else
+    {
+        ShaderPrograms.Add(InShaderProgramName, std::make_shared<FShaderProgram>(TEXT(""), TEXT(""), TEXT(""), InGS, TEXT("")));
+    }
 }
 
 void FRenderer::MappingVSPSCBSlot(const FName InShaderName, const TMap<FShaderConstantKey, uint32>& MappedConstants)
@@ -432,3 +497,4 @@ void FRenderer::MappingIB(const FName InObjectName, const FName InIBName, const 
     }
     VBIBTopologyMappings[InObjectName]->MappingIndexBuffer(InIBName, InNumIndices);
 }
+
