@@ -79,6 +79,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             lightView, lightProj
         );
         cascadeCB.LightVP[i] = lightView * lightProj;
+
     }
 
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)

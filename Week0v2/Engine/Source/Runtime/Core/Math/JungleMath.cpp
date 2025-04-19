@@ -88,7 +88,7 @@ void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camV
     // inv = (proj * view)^-1
     const FMatrix inv = FMatrix::Inverse(camProj * camView);
 
-    // NDC 공간의 8개 코너
+    // NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
     const float ndc[8][3] = {
         {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
         {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
@@ -99,22 +99,16 @@ void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camV
 
     for (int i = 0; i < 8; ++i)
     {
-        // NDC → world
-        FVector4 ptNdc( ndc[i][0], ndc[i][1],
-                        (i < 4 ? -1.0f : +1.0f), 1.0f );
-        // 먼저 깊이만 zNear/zFar에 맞춰줍니다
-        ptNdc.z = (i < 4 ? zNear : zFar);
+        FVector4 ptNdc(ndc[i][0], ndc[i][1], ndc[i][2], 1.0f);
 
-        // 역변환
-        FVector4 ptWorld4 = JungleMath::ConvertV3ToV4( FVector(0,0,0) );
-        // TransformVector 사용
-        ptWorld4 = FMatrix::TransformVector(ptNdc, inv);
+        // NDC → World
+        FVector4 ptWorld4 = inv.TransformFVector4(ptNdc);
 
-        // 동차 좌표 사용
-        FVector worldPt = ptWorld4.xyz() / ptWorld4.w;
-        outCorners.Add(worldPt);
+        FVector ptWorld = ptWorld4.xyz() / ptWorld4.w;
+        outCorners.Add(ptWorld);
     }
 }
+
 
 void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
     const float InCascadeFar, FMatrix& OutLightView, FMatrix& OutLightProj)
