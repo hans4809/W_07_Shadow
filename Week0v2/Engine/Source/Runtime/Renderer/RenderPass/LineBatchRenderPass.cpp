@@ -8,6 +8,7 @@
 #include "Engine/World.h"
 #include <Math/JungleMath.h>
 
+#include "LightManager.h"
 #include "Actors/Light.h"
 #include "Components/LightComponents/DirectionalLightComponent.h"
 #include "Components/LightComponents/PointLightComponent.h"
@@ -88,81 +89,11 @@ void FLineBatchRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportCl
     Graphics.DeviceContext->RSSetState(Renderer.GetCurrentRasterizerState()); //레스터 라이저 상태 설정
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
     Graphics.DeviceContext->OMSetRenderTargets(1, &Graphics.RTVs[0], Graphics.DepthStencilView); // 렌더 타겟 설정
-
-    for (AActor* actor :GEngine->GetWorld()->GetSelectedActors() )    
+    if (Renderer.LightManager)
     {
-        ALight* Light = Cast<ALight>(actor);
-        if (Light)
-        {
-            TArray<UActorComponent*> Comps = Light->GetComponents();
-            for (const auto& Comp : Comps)
-            {
-                if (USpotLightComponent* SpotLight = Cast<USpotLightComponent>(Comp))
-                {
-                    const FMatrix Model = JungleMath::CreateModelMatrix(
-                        SpotLight->GetComponentLocation(),
-                        SpotLight->GetComponentRotation(),
-                        SpotLight->GetComponentScale()
-                    );
-
-                    const float ConeLength = SpotLight->GetRadius();
-
-                    if (SpotLight->GetOuterConeAngle() > 0)
-                    {
-                        float OuterRadius = tan(SpotLight->GetOuterConeAngle()) * ConeLength;
-
-                        UPrimitiveBatch::GetInstance().AddCone(
-                            SpotLight->GetComponentLocation(),
-                            OuterRadius,
-                            ConeLength,
-                            15,
-                            SpotLight->GetLightColor(),
-                            Model
-                        );
-                    }
-
-                    if (SpotLight->GetInnerConeAngle() > 0)
-                    {
-                        float InnerRadius = tan(SpotLight->GetInnerConeAngle()) * ConeLength;
-
-                        UPrimitiveBatch::GetInstance().AddCone(
-                            SpotLight->GetComponentLocation(),
-                            InnerRadius,
-                            ConeLength,
-                            15,
-                            SpotLight->GetLightColor(),
-                            Model
-                        );
-                    }
-                }
-
-                else if (UDirectionalLightComponent* DirectionalLight = Cast<UDirectionalLightComponent>(Comp))
-                {
-                    FVector Right = DirectionalLight->GetOwner()->GetActorRightVector();
-                    for (int i = 0; i < 4; ++i)
-                    {
-                        UPrimitiveBatch::GetInstance().AddLine(
-                            DirectionalLight->GetComponentLocation() + Right * (-1.5f + i),
-                            DirectionalLight->GetOwner()->GetActorForwardVector(),
-                            15.0f,
-                            DirectionalLight->GetLightColor()
-                        );
-                    }
-                }
-                else if (UPointLightComponent* PointLight = Cast< UPointLightComponent>(Comp))
-                {
-                    if (PointLight->GetRadius() > 0)
-                    {
-                        UPrimitiveBatch::GetInstance().AddSphere(
-                            PointLight->GetComponentLocation(),
-                            PointLight->GetRadius(),
-                            PointLight->GetLightColor()
-                        );
-                    }
-                }
-            }
-        }
+        Renderer.LightManager->VisualizeLights(); // 라이트 시각화 일괄 처리
     }
+
     ID3D11ShaderResourceView* FBoundingBoxSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("BoundingBox"));
     Graphics.DeviceContext->VSSetShaderResources(3, 1, &FBoundingBoxSRV);
     ID3D11ShaderResourceView* FConeSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("Cone"));

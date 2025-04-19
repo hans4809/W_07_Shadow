@@ -3,7 +3,9 @@
 #include "EditorEngine.h"
 #include "Components/LightComponents/AmbientLightComponent.h"
 #include "D3D11RHI/CBStructDefine.h"
+#include "Math/JungleMath.h"
 #include "Renderer/RenderResourceManager.h"
+#include "UnrealEd/PrimitiveBatch.h"
 
 void FLightManager::CollectLights(UWorld* InWorld)
 {
@@ -15,10 +17,10 @@ void FLightManager::CollectLights(UWorld* InWorld)
     {
         for (UActorComponent* Component : Actor->GetComponents())
         {
-            if (auto* Point = Cast<UPointLightComponent>(Component))
-                AllPointLights.Add(Point);
-            else if (auto* Spot = Cast<USpotLightComponent>(Component))
+            if (auto* Spot = Cast<USpotLightComponent>(Component))
                 AllSpotLights.Add(Spot);
+            else if (auto* Point = Cast<UPointLightComponent>(Component))
+                AllPointLights.Add(Point);
             else if (auto* Dir = Cast<UDirectionalLightComponent>(Component))
                 DirectionalLight = Dir;
             else if (auto* Ambient = Cast<UAmbientLightComponent>(Component))
@@ -115,4 +117,43 @@ bool FLightManager::IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, con
             return true;
     }
     return false;
+}
+void FLightManager::VisualizeLights()
+{
+    UPrimitiveBatch& Batch = UPrimitiveBatch::GetInstance();
+
+    for (auto* Spot : VisibleSpotLights)
+    {
+        const float Length = Spot->GetRadius();
+        const FVector Pos = Spot->GetComponentLocation();
+        const FMatrix Model = JungleMath::CreateModelMatrix(/*Pos*/{}, Spot->GetComponentRotation(), Spot->GetComponentScale());
+        const FVector4 Color = Spot->GetLightColor();
+
+        float OuterR = tan(Spot->GetOuterConeAngle()) * Length;
+        float InnerR = tan(Spot->GetInnerConeAngle()) * Length;
+
+        if (Spot->GetOuterConeAngle() > 0)
+            Batch.AddCone(Pos, OuterR, Length, 15, Color, Model);
+        if (Spot->GetInnerConeAngle() > 0)
+            Batch.AddCone(Pos, InnerR, Length, 15, Color, Model);
+    }
+    if (DirectionalLight) {
+        FVector Origin = DirectionalLight->GetComponentLocation();
+        FVector Forward = DirectionalLight->GetOwner()->GetActorForwardVector();
+        FVector Right = DirectionalLight->GetOwner()->GetActorRightVector();
+        FVector4 Color = DirectionalLight->GetLightColor();
+
+        for (int i = 0; i < 4; ++i)
+        {
+            Batch.AddLine(Origin + Right * (-1.5f + i), Forward, 15.0f, Color);
+        }
+    }
+
+    for (auto* Point : VisiblePointLights)
+    {
+        if (Point->GetRadius() > 0)
+        {
+            Batch.AddSphere(Point->GetComponentLocation(), Point->GetRadius(), Point->GetLightColor());
+        }
+    }
 }

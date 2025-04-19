@@ -15,6 +15,7 @@ public:
     void CollectLights(UWorld* InWorld);
     void CullLights(const FFrustum& ViewFrustum);
     void UploadLightConstants();
+    void VisualizeLights();
 
     bool HasAmbientLight() const { return AmbientLight != nullptr; }
     bool HasDirectionalLight() const { return DirectionalLight != nullptr; }
