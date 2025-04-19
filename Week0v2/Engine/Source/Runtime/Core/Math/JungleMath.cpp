@@ -141,10 +141,13 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     }
 
     // 5) 직교 투영: 중심을 0,0으로 맞추기 위해 width/height는 extents*2
-    const float width  = (maxs.x - mins.x);
-    const float height = (maxs.y - mins.y);
-    const float nearZ  = mins.z;
-    const float farZ   = maxs.z;
+    float width  = (maxs.x - mins.x);
+    float height = (maxs.y - mins.y);
+    float nearZ  = mins.z;
+    float farZ   = maxs.z;
+
+    width = FMath::Max(width, 10.0f);
+    height = FMath::Max(height, 10.0f);
 
     // JungleMath의 대칭 오쏘 투영 (가로/세로 전체 크기, near, far)
     OutLightProj = CreateOrthoProjectionMatrix(width, height, nearZ, farZ);

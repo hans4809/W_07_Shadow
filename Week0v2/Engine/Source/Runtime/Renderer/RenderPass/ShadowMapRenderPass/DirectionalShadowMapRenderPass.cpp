@@ -26,11 +26,17 @@ void FDirectionalShadowMapRenderPass::AddRenderObjectsToRenderPass(UWorld* InLev
 void FDirectionalShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
 {
     FShadowMapRenderPass::Prepare(InViewportClient);
-    FGraphicsDevice& Graphics = GEngine->graphicDevice;
-    Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
 
+    FGraphicsDevice& Graphics = GEngine->graphicDevice;
+    FRenderer& Renderer = GEngine->renderer;
+    auto curConstantBuffer = Renderer.GetResourceManager()->GetConstantBuffer(TEXT("FCascadeCB"));
+    ID3D11DepthStencilState* DepthStencilState =
+            Renderer.GetResourceManager()->GetDepthStencilState(EDepthStencilState::LessEqual);
+    Graphics.DeviceContext->GSSetConstantBuffers(0, 1, &curConstantBuffer);
+    Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
     Graphics.DeviceContext->ClearDepthStencilView(Graphics.DirShadowDSV, D3D11_CLEAR_DEPTH,1,0);
     // DSV Array 바인딩 & 클리어
+    Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.DirShadowDSV);
 }
 
@@ -58,17 +64,21 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
     cascadeSplits[MAX_CASCADES]     = camFar;
 
     const float lambda = 0.5f; // 0=완전 균등, 1=완전 로그, 0.5=절충
-    for(int i = 1; i < MAX_CASCADES; ++i)
+    const float minCascadeDepth = 1.0f; // 또는 0.5f, 원하는 값으로 조정
+
+    for (int i = 1; i < MAX_CASCADES; ++i)
     {
-        const float si        = static_cast<float>(i) / MAX_CASCADES;       // 0..1
+        const float si = static_cast<float>(i) / MAX_CASCADES;       // 0..1
         // 1) 균등 분할
-        const float uniform   = camNear + (camFar - camNear) * si;
+        const float uniform = camNear + (camFar - camNear) * si;
         // 2) 로그 분할
-        const float logSplit  = camNear * powf(camFar/camNear, si);
+        const float logSplit = camNear * powf(camFar / camNear, si);
         // 3) 절충
-        cascadeSplits[i] = uniform * (1 - lambda) + logSplit * lambda;
+        float splitZ = uniform * (1 - lambda) + logSplit * lambda;
+
+        //  너무 얕은 구간은 강제로 보정
+        cascadeSplits[i] = FMath::Max(splitZ, minCascadeDepth);
     }
-    
     cascadeCB.NumCascades = MAX_CASCADES;
     for (int i = 0; i < MAX_CASCADES; ++i)
     {
@@ -79,7 +89,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             cascadeSplits[i], cascadeSplits[i+1],
             lightView, lightProj
         );
-        cascadeCB.LightVP[i] = lightView * lightProj;
+        cascadeCB.LightVP[i] = View * Proj;
 
     }
 
