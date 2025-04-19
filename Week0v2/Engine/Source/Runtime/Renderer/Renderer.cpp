@@ -132,12 +132,12 @@ void FRenderer::BindConstantBuffers(const FName InShaderName)
         else if (item.Key.ShaderType == EShaderStage::GS)
         {
             if (curConstantBuffer)
-                Graphics->DeviceContext->PSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
+                Graphics->DeviceContext->GSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
         }
         else if (item.Key.ShaderType == EShaderStage::CS)
         {
             if (curConstantBuffer)
-                Graphics->DeviceContext->PSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
+                Graphics->DeviceContext->CSSetConstantBuffers(item.Value, 1, &curConstantBuffer);
         }
     }
 }
@@ -257,6 +257,7 @@ void FRenderer::CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* 
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
     CreateMappedCB(ShaderStageToCB, GeometryConstantInfos, EShaderStage::GS);  
+    MappingGS(Prefix, GeometryShaderName);
 }
 
 #pragma region Shader
