@@ -117,7 +117,6 @@ void FComputeTileLightCulling::UpdateLightConstants()
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
     
     FLightingConstants LightConstant;
-    uint32 DirectionalLightCount = 0;
     uint32 PointLightCount = 0;
 
     for (ULightComponentBase* Comp : LightComponents)
@@ -138,16 +137,14 @@ void FComputeTileLightCulling::UpdateLightConstants()
         UDirectionalLightComponent* DirectionalLightComp = dynamic_cast<UDirectionalLightComponent*>(Comp);
         if (DirectionalLightComp)
         {
-            LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
-            LightConstant.DirLights[DirectionalLightCount].Intensity = DirectionalLightComp->GetIntensity();
-            LightConstant.DirLights[DirectionalLightCount].Direction = DirectionalLightComp->GetForwardVector();
-            DirectionalLightCount++;
+            LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
+            LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
+            LightConstant.DirLight.Direction = DirectionalLightComp->GetForwardVector();
             continue;
         }
     }
 
     LightConstant.NumPointLights = PointLightCount;
-    LightConstant.NumDirectionalLights = DirectionalLightCount;
 
     ID3D11Buffer* LightConstantBuffer = renderResourceManager->GetConstantBuffer(TEXT("FLightingConstants"));
     

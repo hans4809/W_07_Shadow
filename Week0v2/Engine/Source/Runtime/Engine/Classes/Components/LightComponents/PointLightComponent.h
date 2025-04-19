@@ -10,7 +10,7 @@ struct FPointLightComponentInfo : public FLightComponentInfo
 
     FPointLightComponentInfo()
         : FLightComponentInfo()
-        , Radius(1.0f)
+        , Radius(15.0f)
         , AttenuationFalloff(0.01f)
     {
         InfoType = TEXT("FPointLightComponentInfo");
@@ -46,7 +46,7 @@ public:
     UPointLightComponent(const UPointLightComponent& Other);
     virtual ~UPointLightComponent() override = default;
 protected:
-    float Radius = 1.0f;
+    float Radius = 15.0f;
     float AttenuationFalloff = 0.01f;
 
 public:

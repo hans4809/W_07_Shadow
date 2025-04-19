@@ -1,6 +1,7 @@
 #include "StaticMeshRenderPass.h"
 
 #include "EditorEngine.h"
+#include "LightManager.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "D3D11RHI/CBStructDefine.h"
 #include "Engine/World.h"
@@ -37,10 +38,11 @@ void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
                     StaticMesheComponents.Add(pStaticMeshComp);
             }
             
+            /*
             if (ULightComponentBase* pGizmoComp = Cast<ULightComponentBase>(actorComp))
             {
                 LightComponents.Add(pGizmoComp);
-            }
+            }*/
         }
     }
 }
@@ -51,7 +53,17 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
 
     const FRenderer& Renderer = GEngine->renderer;
     const FGraphicsDevice& Graphics = GEngine->graphicDevice;
+    std::shared_ptr<FEditorViewportClient> Viewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+    if (Viewport && Renderer.LightManager)
+    {
+        /*FMatrix View = Viewport->GetViewMatrix();
+        FMatrix Proj = Viewport->GetProjectionMatrix();
+        FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
 
+        Renderer.LightManager->CullLights(Frustum);
+        */
+        Renderer.LightManager->UploadLightConstants();
+    }
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
     Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     Graphics.DeviceContext->RSSetState(Renderer.GetCurrentRasterizerState());
@@ -124,8 +136,9 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
         // UpdateSkySphereTextureConstants(Cast<USkySphereComponent>(staticMeshComp));
         UpdateContstantBufferActor(UUIDColor , isSelected);
 
-        UpdateLightConstants();
-
+        //Prepare에서 업로드 완료
+        //UpdateLightConstants();
+        //Renderer.LightManager->UploadLightConstants();
         UpdateFlagConstant();
         
         UpdateComputeConstants(InViewportClient);
@@ -218,7 +231,7 @@ void FStaticMeshRenderPass::UpdateComputeConstants(const std::shared_ptr<FViewpo
 void FStaticMeshRenderPass::ClearRenderObjects()
 {
     StaticMesheComponents.Empty();
-    LightComponents.Empty();
+    //LightComponents.Empty();
 }
 
 void FStaticMeshRenderPass::UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection)
@@ -257,12 +270,11 @@ void FStaticMeshRenderPass::UpdateFlagConstant()
     renderResourceManager->UpdateConstantBuffer(TEXT("FFlagConstants"), &FlagConstant);
 }
 
-void FStaticMeshRenderPass::UpdateLightConstants()
+/*void FStaticMeshRenderPass::UpdateLightConstants()
 {
     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
 
     FLightingConstants LightConstant;
-    uint32 DirectionalLightCount = 0;
     uint32 PointLightCount = 0;
     uint32 SpotLightCount = 0;
 
@@ -276,48 +288,56 @@ void FStaticMeshRenderPass::UpdateLightConstants()
         {
             continue;
         }
-        UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp);
+        
+        if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp))
+        {
+            LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
+            LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
+            LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
+            LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
+            LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
+            LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
+            LightConstant.SpotLights[SpotLightCount].Radius = SpotLightComp->GetRadius();
+            LightConstant.SpotLights[SpotLightCount].AttenuationFalloff = SpotLightComp->GetAttenuationFalloff();
 
-        if (PointLightComp)
+            SpotLightCount++;
+            continue;
+        }
+        
+
+        if (UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp))
         {
             LightConstant.PointLights[PointLightCount].Color = PointLightComp->GetLightColor();
             LightConstant.PointLights[PointLightCount].Intensity = PointLightComp->GetIntensity();
             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetComponentLocation();
             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
+
             PointLightCount++;
             continue;
         }
 
-        UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp);
-        if (DirectionalLightComp)
+        if (UDirectionalLightComponent* DirectionalLightComp = Cast<UDirectionalLightComponent>(Comp))
         {
-            USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(DirectionalLightComp);
-            if (SpotLightComp)
-            {
-                LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
-                LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
-                LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
-                LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
-                LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
-                LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
-                SpotLightCount++;
-                continue;
-            }
-            LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
+
+            LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
+            LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
+            LightConstant.DirLight.Direction = DirectionalLightComp->GetOwner()->GetActorForwardVector();
+
+            /*LightConstant.DirLights[DirectionalLightCount].Color = DirectionalLightComp->GetLightColor();
             LightConstant.DirLights[DirectionalLightCount].Intensity = DirectionalLightComp->GetIntensity();
             LightConstant.DirLights[DirectionalLightCount].Direction = DirectionalLightComp->GetOwner()->GetActorForwardVector();
-            DirectionalLightCount++;
+            DirectionalLightCount++;#1#
             continue;
         }
+
     }
     //UE_LOG(LogLevel::Error, "Point : %d, Spot : %d Dir : %d", PointLightCount, SpotLightCount, DirectionalLightCount);
     LightConstant.NumPointLights = PointLightCount;
     LightConstant.NumSpotLights = SpotLightCount;
-    LightConstant.NumDirectionalLights = DirectionalLightCount;
     
     renderResourceManager->UpdateConstantBuffer(TEXT("FLightingConstants"), &LightConstant);
-}
+}*/
 
 void FStaticMeshRenderPass::UpdateContstantBufferActor(const FVector4 UUID, int32 isSelected)
 {
@@ -410,7 +430,7 @@ void FStaticMeshRenderPass::UpdateCameraConstant(const std::shared_ptr<FViewport
     renderResourceManager->UpdateConstantBuffer(renderResourceManager->GetConstantBuffer(TEXT("FCameraConstant")), &CameraConstants);
 }
 
-bool FStaticMeshRenderPass::IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const
+/*bool FStaticMeshRenderPass::IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const
 {
     // if (dynamic_cast<UDirectionalLightComponent*>(LightComponent) && !dynamic_cast<USpotLightComponent>(LightComponent))
     // {
@@ -497,4 +517,4 @@ bool FStaticMeshRenderPass::IsSpotLightInFrustum(USpotLightComponent* SpotLightC
     
     // 모든 검사에서 프러스텀 내부에 포함된 점이 없으면 false
     return false;
-}
+}*/
