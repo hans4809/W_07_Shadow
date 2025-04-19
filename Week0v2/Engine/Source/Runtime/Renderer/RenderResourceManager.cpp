@@ -628,3 +628,135 @@ void FRenderResourceManager::HotReloadShaders()
         }
     }
 }
+
+ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(uint32 ViewDimension)
+{
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width = 2048;
+    texDesc.Height = 2048;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = ViewDimension;
+    texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.Usage = D3D11_USAGE_DEFAULT;
+    texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    texDesc.CPUAccessFlags = 0;
+    texDesc.MiscFlags = 0;
+
+    ID3D11Texture2D* textureArray = nullptr;
+    if (FAILED(GraphicDevice->Device->CreateTexture2D(&texDesc, nullptr, &textureArray)))
+    {
+        assert(false && "CreateTexture2DArray failed");
+        return nullptr;
+    }
+
+    return textureArray;
+}
+
+ID3D11DepthStencilView* FRenderResourceManager::CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension)
+{
+    ID3D11DepthStencilView* DSV = nullptr;
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+    dsvDesc.Texture2DArray.MipSlice = 0;
+    dsvDesc.Texture2DArray.FirstArraySlice = 0;
+    dsvDesc.Texture2DArray.ArraySize = ViewDimension;
+
+    GraphicDevice->Device->CreateDepthStencilView(TextureArray, &dsvDesc, &DSV);
+
+    return DSV;
+}
+
+ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension)
+{
+    ID3D11ShaderResourceView* SRV = nullptr;
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // Shader에서 읽을 포맷
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+    srvDesc.Texture2DArray.MostDetailedMip = 0;
+    srvDesc.Texture2DArray.MipLevels = 1;
+    srvDesc.Texture2DArray.FirstArraySlice = 0;
+    srvDesc.Texture2DArray.ArraySize = ViewDimension;
+
+    GraphicDevice->Device->CreateShaderResourceView(TextureArray, &srvDesc, &SRV);
+
+    return SRV;
+}
+
+void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+{
+    if (SRVShadowMap.Contains(InShadowMapName) == false)
+    {
+        SRVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>();
+    }
+
+    if (SRVShadowMap.Contains(InShadowMapName) == true && SRVShadowMap[InShadowMapName].Key != nullptr)
+    {
+        SRVShadowMap[InShadowMapName].Key->Release();
+    }
+    SRVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
+}
+
+void FRenderResourceManager::AddOrSetDSVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+{
+    if (DSVShadowMap.Contains(InShadowMapName) == false)
+    {
+        DSVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>();
+    }
+
+    if (DSVShadowMap.Contains(InShadowMapName) == true && DSVShadowMap[InShadowMapName].Key != nullptr)
+    {
+        DSVShadowMap[InShadowMapName].Key->Release();
+    }
+    DSVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
+}
+
+void FRenderResourceManager::AddOrSetSRVShadowMapSRV(FName InShadowMapName, ID3D11ShaderResourceView* InShadowSRV)
+{
+    if (SRVShadowMap.Contains(InShadowMapName) == false)
+    {
+        SRVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>();
+    }
+
+    if (SRVShadowMap.Contains(InShadowMapName) == true && SRVShadowMap[InShadowMapName].Value != nullptr)
+    {
+        SRVShadowMap[InShadowMapName].Value->Release();
+    }
+    SRVShadowMap[InShadowMapName].Value = InShadowSRV;
+}
+
+void FRenderResourceManager::AddOrSetDSVShadowMapDSV(FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
+{
+    if (DSVShadowMap.Contains(InShadowMapName) == false)
+    {
+        DSVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>();
+    }
+
+    if (DSVShadowMap.Contains(InShadowMapName) == true && DSVShadowMap[InShadowMapName].Value != nullptr)
+    {
+        DSVShadowMap[InShadowMapName].Value->Release();
+    }
+    DSVShadowMap[InShadowMapName].Value = InShadowDSV;
+}
+
+ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSRV(const FName InName) const
+{
+    if (SRVShadowMap.Contains(InName))
+    {
+        return SRVShadowMap[InName].Value;
+    }
+
+    return nullptr;
+}
+
+ID3D11DepthStencilView* FRenderResourceManager::GetShadowMapDSV(const FName InName) const
+{
+    if (DSVShadowMap.Contains(InName))
+    {
+        return DSVShadowMap[InName].Value;
+    }
+    return nullptr;
+}
