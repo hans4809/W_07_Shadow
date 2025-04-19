@@ -629,11 +629,11 @@ void FRenderResourceManager::HotReloadShaders()
     }
 }
 
-ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(uint32 ViewDimension)
+ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension)
 {
     D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width = 2048;
-    texDesc.Height = 2048;
+    texDesc.Width = Width;
+    texDesc.Height = Height;
     texDesc.MipLevels = 1;
     texDesc.ArraySize = ViewDimension;
     texDesc.Format = DXGI_FORMAT_R32_TYPELESS;

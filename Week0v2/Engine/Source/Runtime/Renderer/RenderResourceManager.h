@@ -106,7 +106,7 @@ public:
     void HotReloadShaders();
 public:
     //Create ShadowMap
-    ID3D11Texture2D* CreateTexture2DArray(uint32 ViewDimension);
+    ID3D11Texture2D* CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension);
     ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
     ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
     //AddOrSet ShadowMap
