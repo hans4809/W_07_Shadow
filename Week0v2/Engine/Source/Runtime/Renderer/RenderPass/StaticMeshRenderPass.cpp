@@ -28,7 +28,6 @@ extern UEditorEngine* GEngine;
 
 void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
 {
-    GEngine->renderer.LightManager->CollectLights(InWorld);
     for (const AActor* actor : InWorld->GetActors())
     {
         for (const UActorComponent* actorComp : actor->GetComponents())
@@ -57,11 +56,12 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     std::shared_ptr<FEditorViewportClient> Viewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (Viewport && Renderer.LightManager)
     {
-        FMatrix View = Viewport->GetViewMatrix();
+        /*FMatrix View = Viewport->GetViewMatrix();
         FMatrix Proj = Viewport->GetProjectionMatrix();
         FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
 
         Renderer.LightManager->CullLights(Frustum);
+        */
         Renderer.LightManager->UploadLightConstants();
     }
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
