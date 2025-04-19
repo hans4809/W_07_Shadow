@@ -16,6 +16,8 @@ public:
     void CullLights(const FFrustum& ViewFrustum);
     void UploadLightConstants();
 
+    bool HasAmbientLight() const { return AmbientLight != nullptr; }
+    bool HasDirectionalLight() const { return DirectionalLight != nullptr; }
 private:
     UAmbientLightComponent* AmbientLight = nullptr;
     UDirectionalLightComponent* DirectionalLight = nullptr;

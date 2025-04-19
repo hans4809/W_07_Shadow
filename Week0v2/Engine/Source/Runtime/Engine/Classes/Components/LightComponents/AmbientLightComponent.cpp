@@ -4,6 +4,7 @@
 
 UAmbientLightComponent::UAmbientLightComponent()
 {
+    SetIntensity(0.01f);
 }
 
 UAmbientLightComponent::UAmbientLightComponent(const UAmbientLightComponent& Other)
