@@ -39,7 +39,7 @@ PS_INPUT mainVS(VS_INPUT input)
     // float3 totalLight = MatAmbientColor + EmissiveColor;
     //TODO : Lit 이면 기본 Ambient를 낮은 값으로 하고 Unlit이면 float(1.0,1.0,1.0)으로 하면 됩니다.
     //기본적으로 머터리얼을 읽어올 때는 1.0,1.0,1.0으로 읽어오는 것 같아요 
-    float3 totalLight = float3(0.01f,0.01f,0.01f) + EmissiveColor;
+    float3 totalLight = CalculateAmbientLight(AmbientLight, input.color.rgb) + EmissiveColor;
     
     if(!IsLit)
     {

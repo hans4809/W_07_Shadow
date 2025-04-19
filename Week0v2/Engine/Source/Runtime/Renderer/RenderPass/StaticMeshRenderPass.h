@@ -30,16 +30,16 @@ public:
 private:
     static void UpdateMatrixConstants(UStaticMeshComponent* InStaticMeshComponent, const FMatrix& InView, const FMatrix& InProjection);
     void UpdateFlagConstant();
-    void UpdateLightConstants();
+    // void UpdateLightConstants();
     void UpdateContstantBufferActor(const FVector4 UUID, int32 isSelected);
     static void UpdateSkySphereTextureConstants(const USkySphereComponent* InSkySphereComponent);
     static void UpdateMaterialConstants(const FObjMaterialInfo& MaterialInfo);
     void UpdateCameraConstant(const std::shared_ptr<FViewportClient>& InViewportClient);
 
 private:
-    bool IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const;
-    bool IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const;
+    //bool IsLightInFrustum(ULightComponentBase* LightComponent, const FFrustum& CameraFrustum) const;
+    //bool IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const;
 private:        
-    TArray<ULightComponentBase*> LightComponents;
+    //TArray<ULightComponentBase*> LightComponents;
     TArray<UStaticMeshComponent*> StaticMesheComponents;
 };

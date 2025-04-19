@@ -59,6 +59,10 @@ struct FSpotLight
 // ---------------------------------------------
 // 조명 계산 함수 정의
 // ---------------------------------------------
+float3 CalculateAmbientLight(FAmbientLight Light, float3 Albedo)
+{
+    return Light.Color.rgb * Albedo * Light.Intensity;
+}
 
 float3 CalculateDirectionalLight(
     FDirectionalLight Light,
@@ -227,7 +231,8 @@ cbuffer FLightingConstants : register(b1)
     uint NumPointLights;
     uint NumSpotLights;
     float2 pad;
-
+    
+    FAmbientLight AmbientLight;
     FDirectionalLight DirLight;
     FPointLight PointLights[NUM_POINT_LIGHT];
     FSpotLight SpotLights[NUM_SPOT_LIGHT];

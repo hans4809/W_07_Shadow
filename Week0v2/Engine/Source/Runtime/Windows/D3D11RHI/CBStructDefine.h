@@ -142,6 +142,7 @@ struct alignas(16) FLightingConstants
     uint32 NumPointLights; // offset: 4, size: 4
     uint32 NumSpotLights;
     float pad[2]; // offset: 8, size: 8
+    FAmbientLight AmbientLight;
     FDirectionalLight DirLight;
     FPointLight PointLights[NUM_POINT_LIGHT];
     FSpotLight SpotLights[NUM_SPOT_LIGHT];

@@ -17,6 +17,7 @@
 #include <Actors/ExponentialHeightFog.h>
 #include <UObject/UObjectIterator.h>
 
+#include "Actors/AmbientLightActor.h"
 #include "Components/PrimitiveComponents/UParticleSubUVComp.h"
 #include "Components/PrimitiveComponents/UTextComponent.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
@@ -281,6 +282,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
             { "Lights", "Spot Light",      OBJ_SPOTLIGHT },
             { "Lights", "Point Light",     OBJ_POINTLIGHT },
             { "Lights", "Directional Light", OBJ_DIRECTIONALLIGHT },
+            { "Lights", "Ambient Light", OBJ_AMBIENTLIGHT },
 
             // 🔷 셰이프
             { "Shapes", "Cube",            OBJ_CUBE },
@@ -378,7 +380,12 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                     SpawnedActor->SetActorLabel(TEXT("OBJ_DIRECTIONALLIGHT"));
                     break;
                 }
-
+                case OBJ_AMBIENTLIGHT:
+                {
+                    SpawnedActor = World->SpawnActor<AAmbientLightActor>();
+                    SpawnedActor->SetActorLabel(TEXT("OBJ_AMBIENTLIGHT"));
+                    break;
+                }
                 // ✨ 효과
                 case OBJ_PARTICLE:
                 {

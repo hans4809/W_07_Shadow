@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include <d3dcompiler.h>
 
+#include "LightManager.h"
 #include "VBIBTopologyMapping.h"
 #include "ComputeShader/ComputeTileLightCulling.h"
 #include "Engine/World.h"
@@ -43,6 +44,7 @@ D3D_SHADER_MACRO FRenderer::EditorIconDefines[] =
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
+    LightManager = new FLightManager();
     RenderResourceManager = new FRenderResourceManager(graphics);
     RenderResourceManager->Initialize();
 
