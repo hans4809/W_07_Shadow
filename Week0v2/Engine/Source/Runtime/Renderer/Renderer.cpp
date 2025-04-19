@@ -102,6 +102,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     FString DirShadowMapName = TEXT("ShadowMap");
     DirShadowMapName += DirectionalDefines->Name;
     CreateVertexPixelShader(TEXT("ShadowMap"), DirectionalDefines);
+    CreateGeometryShader(TEXT("ShadowMap"), DirectionalDefines);
     DirectionalShadowMapRenderPass = std::make_shared<FDirectionalShadowMapRenderPass>(DirShadowMapName);
 }
 
@@ -247,9 +248,9 @@ void FRenderer::CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* 
     // 접미사를 각각 붙여서 전체 파일명 생성
     const FString GeometryShaderFile = InPrefix + TEXT("GeometryShader.hlsl");
     const FString GeometryShaderName = Prefix + TEXT("GeometryShader.hlsl");
-    RenderResourceManager->CreateComputeShader(GeometryShaderName, GeometryShaderFile, pDefines);
+    RenderResourceManager->CreateGeometryShader(GeometryShaderName, GeometryShaderFile, pDefines);
 
-    ID3DBlob* ComputeShaderBlob = RenderResourceManager->GetComputeShaderBlob(GeometryShaderName);
+    ID3DBlob* ComputeShaderBlob = RenderResourceManager->GetGeometryShaderBlob(GeometryShaderName);
     TArray<FConstantBufferInfo> GeometryConstantInfos;
     Graphics->ExtractShaderConstantInfo(ComputeShaderBlob, GeometryConstantInfos);
     

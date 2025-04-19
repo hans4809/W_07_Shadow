@@ -430,7 +430,7 @@ void FRenderResourceManager::CreateComputeShader(const FString& InShaderName, co
 
     std::filesystem::file_time_type CurrentPSWriteTime = std::filesystem::last_write_time(fullpath);
 #if USE_WIDECHAR
-    AddOrSetComputeShader(InShaderName, fullpath.wstring(), PixelShader, PSBlob, pDefines, CurrentPSWriteTime);
+    AddOrSetComputeShader(InShaderName, fullpath.wstring(), ComputeShader, CSBlob, pDefines, CurrentPSWriteTime);
 #else
     AddOrSetComputeShader(InShaderName, fullpath.string(), ComputeShader, CSBlob, pDefines, CurrentPSWriteTime);
 #endif

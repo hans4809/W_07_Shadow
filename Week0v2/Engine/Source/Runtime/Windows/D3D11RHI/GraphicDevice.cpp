@@ -114,30 +114,31 @@ void FGraphicsDevice::CreateDirectionalLightShadowMap()
     texDesc.Width     = SM_SIZE;
     texDesc.Height    = SM_SIZE;
     texDesc.MipLevels = 1;
-    texDesc.ArraySize = 4;
+    texDesc.ArraySize = MAX_CASCADES;
     texDesc.Format    = DXGI_FORMAT_R32_TYPELESS;
-    texDesc.SampleDesc.Count   = MAX_CASCADES;
+    texDesc.SampleDesc.Count = 1;                    // ← MSAA 아님!
+    texDesc.SampleDesc.Quality = 0;
     texDesc.Usage            = D3D11_USAGE_DEFAULT;
     texDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    
     Device->CreateTexture2D(&texDesc, nullptr, &DirShadowTexture);
 
-    // 2) DSV
     D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format        = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
-    dsvDesc.Texture2DMSArray.FirstArraySlice = 0;
-    dsvDesc.Texture2DMSArray.ArraySize = MAX_CASCADES;
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 뷰
+    dsvDesc.Texture2DArray.FirstArraySlice = 0;                       // ← 여기
+    dsvDesc.Texture2DArray.ArraySize = MAX_CASCADES;            // ← 여기
+    dsvDesc.Texture2DArray.MipSlice = 0;                       // ← 그리고 MipSlice
+    HRESULT hr1 = Device->CreateDepthStencilView(DirShadowTexture, &dsvDesc, &DirShadowDSV);
 
-    Device->CreateDepthStencilView(DirShadowTexture, &dsvDesc, &DirShadowDSV);
-
-    // 3) SRV (나중에 메인 패스에서 디버깅 또는 PCF용으로 바인딩)
+    // 3) SRV
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format             = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
-    srvDesc.Texture2DMSArray.FirstArraySlice = 0;
-    srvDesc.Texture2DMSArray.ArraySize = MAX_CASCADES;
-    Device->CreateShaderResourceView(DirShadowTexture, &srvDesc, &DirShadowSRV);
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 SRV
+    srvDesc.Texture2DArray.FirstArraySlice = 0;                        // ← 여기
+    srvDesc.Texture2DArray.ArraySize = MAX_CASCADES;             // ← 여기
+    srvDesc.Texture2DArray.MostDetailedMip = 0;                        // ← 그리고 Mip 설정
+    srvDesc.Texture2DArray.MipLevels = 1;
+    HRESULT hr2 = Device->CreateShaderResourceView(DirShadowTexture, &srvDesc, &DirShadowSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const

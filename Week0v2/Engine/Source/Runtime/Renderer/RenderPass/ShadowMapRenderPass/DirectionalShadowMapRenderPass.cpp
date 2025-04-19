@@ -27,6 +27,7 @@ void FDirectionalShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> I
 {
     FShadowMapRenderPass::Prepare(InViewportClient);
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
+    Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
 
     Graphics.DeviceContext->ClearDepthStencilView(Graphics.DirShadowDSV, D3D11_CLEAR_DEPTH,1,0);
     // DSV Array 바인딩 & 클리어

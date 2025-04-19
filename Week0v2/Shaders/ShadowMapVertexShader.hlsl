@@ -18,22 +18,17 @@ cbuffer FCascadeCB : register(b0)
 struct VS_INPUT
 {
     float4 position : POSITION;
-    uint cascadeID : SV_InstanceID; // 0..NumCascades - 1
 };
 
 struct VS_OUTPUT
 {
-    float4 position : SV_POSITION;
-    uint RenderTargetArrayIndex : SV_RenderTargetArrayIndex;
+    float4 worldPos  : TEXCOORD0;
 };
 
 VS_OUTPUT mainVS(VS_INPUT input)
 {
     VS_OUTPUT output;
-    float4 worldPos = mul(input.position, ModelMatrix);
-    uint idx = input.cascadeID;
-    output.position = mul(worldPos, LightVP[idx]);
-    output.RenderTargetArrayIndex = idx;
+    output.worldPos = mul(input.position, ModelMatrix);
     return output;
 }
 #endif
