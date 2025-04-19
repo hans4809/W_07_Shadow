@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -267,7 +267,7 @@
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\DirectionalShadowMapRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\PointShadowMapRenderPass.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\ShadowMapRenderPass.cpp">
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\ShadowMapRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\SpotShadowMapRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\StaticMeshRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderResourceManager.cpp" />
