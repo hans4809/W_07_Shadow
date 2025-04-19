@@ -79,14 +79,14 @@ void UEditorEngine::Render()
         {
             LevelEditor->SetViewportClient(i);
             ResizeGizmo();
-            renderer.AddRenderObjectsToRenderPass(GWorld);
+            renderer.AddRenderObjectsToRenderPass(GWorld, LevelEditor->GetActiveViewportClient());
             renderer.Render(GWorld, LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
-        renderer.AddRenderObjectsToRenderPass(GWorld);
+        renderer.AddRenderObjectsToRenderPass(GWorld, LevelEditor->GetActiveViewportClient());
         renderer.Render(GWorld, LevelEditor->GetActiveViewportClient());
     }
     ResizeGizmo();

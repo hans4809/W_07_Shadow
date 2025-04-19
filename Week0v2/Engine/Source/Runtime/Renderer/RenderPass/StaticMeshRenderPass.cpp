@@ -37,12 +37,6 @@ void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
                 if (!Cast<UGizmoBaseComponent>(actorComp))
                     StaticMesheComponents.Add(pStaticMeshComp);
             }
-            
-            /*
-            if (ULightComponentBase* pGizmoComp = Cast<ULightComponentBase>(actorComp))
-            {
-                LightComponents.Add(pGizmoComp);
-            }*/
         }
     }
 }
@@ -56,12 +50,6 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     std::shared_ptr<FEditorViewportClient> Viewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (Viewport && Renderer.LightManager)
     {
-        /*FMatrix View = Viewport->GetViewMatrix();
-        FMatrix Proj = Viewport->GetProjectionMatrix();
-        FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
-
-        Renderer.LightManager->CullLights(Frustum);
-        */
         Renderer.LightManager->UploadLightConstants();
     }
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);

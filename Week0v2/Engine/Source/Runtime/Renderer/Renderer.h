@@ -24,7 +24,7 @@ class FRenderer
 private:
     void CreateVertexPixelShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
     void CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
-    void CreateComputeShader();
+    //void CreateComputeShader();
     //void CreateStaticMeshShader();
     //void CreateTextureShader();
     //void CreateLineBatchShader();
@@ -63,7 +63,7 @@ public:
 public:
     //Render Pass Demo
     
-    void AddRenderObjectsToRenderPass(UWorld* InWorld) const;
+    void AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
     void Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void ClearRenderObjects() const;
 
@@ -90,6 +90,7 @@ private:
     std::shared_ptr<FStaticMeshRenderPass> GoroudRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> LambertRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> PhongRenderPass;
+    
     std::shared_ptr<FLineBatchRenderPass> LineBatchRenderPass;
     std::shared_ptr<FGizmoRenderPass> GizmoRenderPass;
     std::shared_ptr<FComputeTileLightCulling> ComputeTileLightCulling;

@@ -213,43 +213,43 @@ void FRenderer::CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* p
 
 #pragma region Shader
 
-void FRenderer::CreateComputeShader()
-{
-    ID3DBlob* CSBlob_LightCulling = nullptr;
-    
-    ID3D11ComputeShader* ComputeShader = RenderResourceManager->GetComputeShader(TEXT("TileLightCulling"));
-    
-    if (ComputeShader == nullptr)
-    {
-        Graphics->CreateComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr, &CSBlob_LightCulling, &ComputeShader);
-    }
-    else
-    {
-        FGraphicsDevice::CompileComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr,  &CSBlob_LightCulling);
-    }
-    RenderResourceManager->AddOrSetComputeShader(TEXT("TileLightCulling"), ComputeShader);
-    
-    TArray<FConstantBufferInfo> LightCullingComputeConstant;
-    Graphics->ExtractPixelShaderInfo(CSBlob_LightCulling, LightCullingComputeConstant);
-    
-    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
-
-    for (const FConstantBufferInfo item : LightCullingComputeConstant)
-    {
-        ShaderStageToCB[{EShaderStage::CS, item.Name}] = item.BindSlot;
-        if (RenderResourceManager->GetConstantBuffer(item.Name) == nullptr)
-        {
-            ID3D11Buffer* ConstantBuffer = RenderResourceManager->CreateConstantBuffer(item.ByteWidth);
-            RenderResourceManager->AddOrSetConstantBuffer(item.Name, ConstantBuffer);
-        }
-    }
-
-    MappingVSPSCBSlot(TEXT("TileLightCulling"), ShaderStageToCB);
-    
-    ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
-
-    SAFE_RELEASE(CSBlob_LightCulling)
-}
+// void FRenderer::CreateComputeShader()
+// {
+//     ID3DBlob* CSBlob_LightCulling = nullptr;
+//     
+//     ID3D11ComputeShader* ComputeShader = RenderResourceManager->GetComputeShader(TEXT("TileLightCulling"));
+//     
+//     if (ComputeShader == nullptr)
+//     {
+//         Graphics->CreateComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr, &CSBlob_LightCulling, &ComputeShader);
+//     }
+//     else
+//     {
+//         FGraphicsDevice::CompileComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr,  &CSBlob_LightCulling);
+//     }
+//     RenderResourceManager->AddOrSetComputeShader(TEXT("TileLightCulling"), ComputeShader);
+//     
+//     TArray<FConstantBufferInfo> LightCullingComputeConstant;
+//     Graphics->ExtractPixelShaderInfo(CSBlob_LightCulling, LightCullingComputeConstant);
+//     
+//     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+//
+//     for (const FConstantBufferInfo item : LightCullingComputeConstant)
+//     {
+//         ShaderStageToCB[{EShaderStage::CS, item.Name}] = item.BindSlot;
+//         if (RenderResourceManager->GetConstantBuffer(item.Name) == nullptr)
+//         {
+//             ID3D11Buffer* ConstantBuffer = RenderResourceManager->CreateConstantBuffer(item.ByteWidth);
+//             RenderResourceManager->AddOrSetConstantBuffer(item.Name, ConstantBuffer);
+//         }
+//     }
+//
+//     MappingVSPSCBSlot(TEXT("TileLightCulling"), ShaderStageToCB);
+//     
+//     ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
+//
+//     SAFE_RELEASE(CSBlob_LightCulling)
+// }
 
 void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
@@ -263,15 +263,9 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     {
         FogRenderPass->PrePrepare(); //fog 렌더 여부 결정 및 준비
     }
-    //값을 써줄때 
     
     ComputeTileLightCulling->Dispatch(ActiveViewport);
 
-    LightManager->CollectLights(World);
-    FMatrix View = ActiveViewport->GetViewMatrix();
-    FMatrix Proj = ActiveViewport->GetProjectionMatrix();
-    FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
-    LightManager->CullLights(Frustum);
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         //TODO : FLAG로 나누기
@@ -383,8 +377,15 @@ void FRenderer::SetViewMode(const EViewModeIndex evi)
     }
 }
 
-void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld) const
+void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_ptr<FEditorViewportClient>& ActiveViewport) const
 {
+    //값을 써줄때 
+    LightManager->CollectLights(InWorld);
+    FMatrix View = ActiveViewport->GetViewMatrix();
+    FMatrix Proj = ActiveViewport->GetProjectionMatrix();
+    FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
+    LightManager->CullLights(Frustum);
+    
     ComputeTileLightCulling->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
