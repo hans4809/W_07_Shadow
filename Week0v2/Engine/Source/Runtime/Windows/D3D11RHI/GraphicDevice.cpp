@@ -529,6 +529,34 @@ bool FGraphicsDevice::CompileVertexShader(const std::filesystem::path& InFilePat
     return true;
 }
 
+bool FGraphicsDevice::CompileGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
+{
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;   
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+
+    ID3DBlob* errorBlob = nullptr;
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
+
+    const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainGS", "gs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        return false;
+    }
+
+    return true;
+}
+
 bool FGraphicsDevice::CompilePixelShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -556,7 +584,7 @@ bool FGraphicsDevice::CompilePixelShader(const std::filesystem::path& InFilePath
     return true;
 }
 
-bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
+bool FGraphicsDevice::CompileComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -565,10 +593,8 @@ bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_
     shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
-
-    const std::filesystem::path current = std::filesystem::current_path();
-    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
-    const std::wstring shaderFilePath = fullpath.wstring();
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
     const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainCS", "cs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
@@ -586,7 +612,7 @@ bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_
     return true;
 }
 
-bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVShader) const
+bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVS) const
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -597,13 +623,10 @@ bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath
     ID3DBlob* errorBlob = nullptr;
     
     const std::wstring shaderFilePath = InFilePath.wstring();
-    
-    HRESULT hr;
-    if (pDefines)
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
-    else
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS",
+                                    "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    
     if (FAILED(hr))
     {
         if (errorBlob)
@@ -618,7 +641,43 @@ bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath
     if(Device == nullptr)
         return false;
 
-    if (FAILED(Device->CreateVertexShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppVShader)))
+    if (FAILED(Device->CreateVertexShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppVS)))
+        return false;
+
+    return true;
+}
+
+bool FGraphicsDevice::CreateGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode,
+    ID3D11GeometryShader** ppGS) const
+{
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+
+    ID3DBlob* errorBlob = nullptr;
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
+
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainGS",
+                                    "gs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        abort();
+    }
+    
+    if (Device == nullptr)
+        return false;
+
+    if (FAILED(Device->CreateGeometryShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppGS)))
         return false;
 
     return true;
@@ -634,13 +693,10 @@ bool FGraphicsDevice::CreatePixelShader(const std::filesystem::path& InFilePath,
 
     ID3DBlob* errorBlob = nullptr;
     
-    const std::wstring shaderFilePath = InFilePath.wstring();    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
-    HRESULT hr;
-    if (pDefines)
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
-    else
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS",
+                                    "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
     
     if (FAILED(hr))
     {
@@ -662,7 +718,7 @@ bool FGraphicsDevice::CreatePixelShader(const std::filesystem::path& InFilePath,
     return true;
 }
 
-bool FGraphicsDevice::CreateComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const
+bool FGraphicsDevice::CreateComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -671,10 +727,8 @@ bool FGraphicsDevice::CreateComputeShader(const FString& InFileName, const D3D_S
     shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
-
-    const std::filesystem::path current = std::filesystem::current_path();
-    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
-    const std::wstring shaderFilePath = fullpath.wstring();
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
     const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainCS", "cs_5_0", shaderFlags, 0, ppCode, &errorBlob);
     

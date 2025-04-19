@@ -4,8 +4,10 @@
 
 #include <memory>
 
-#include "D3D11RHI/PixelShader.h"
-#include "D3D11RHI/VertexShader.h"
+#include "D3D11RHI/Shaders/ComputeShader.h"
+#include "D3D11RHI/Shaders/GeometryShader.h"
+#include "D3D11RHI/Shaders/PixelShader.h"
+#include "D3D11RHI/Shaders/VertexShader.h"
 
 FRenderResourceManager::FRenderResourceManager(FGraphicsDevice* InGraphicDevice)
 {
@@ -293,6 +295,10 @@ void FRenderResourceManager::CreateVertexShader(const FString& InShaderName, con
     {
         GraphicDevice->CreateVertexShader(fullpath, pDefines, &VSBlob, &VertexShader);
     }
+    else
+    {
+        GraphicDevice->CompileVertexShader(fullpath, pDefines, &VSBlob);
+    }
     
     std::filesystem::file_time_type CurrentVSWriteTime = std::filesystem::last_write_time(fullpath);
 #if USE_WIDECHAR
@@ -320,6 +326,49 @@ void FRenderResourceManager::UpdateVertexShader(const FString& InShaderName, con
 #endif
 }
 
+void FRenderResourceManager::CreateGeometryShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines)
+{
+    ID3DBlob* GSBlob = nullptr;
+
+    const std::filesystem::path current = std::filesystem::current_path();
+    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
+
+    ID3D11GeometryShader* GeometryShader = GetGeometryShader(InShaderName);
+    if (GeometryShader == nullptr)
+    {
+        GraphicDevice->CreateGeometryShader(fullpath, pDefines, &GSBlob, &GeometryShader);
+    }
+    else
+    {
+        GraphicDevice->CompileGeometryShader(fullpath, pDefines, &GSBlob);
+    }
+    
+    std::filesystem::file_time_type CurrentVSWriteTime = std::filesystem::last_write_time(fullpath);
+#if USE_WIDECHAR
+    AddOrSetGeometryShader(InShaderName, fullpath.wstring(), VertexShader, VSBlob, pDefines, CurrentVSWriteTime);
+#else
+    AddOrSetGeometryShader(InShaderName, fullpath.string(), GeometryShader, GSBlob, pDefines, CurrentVSWriteTime);
+#endif
+}
+
+void FRenderResourceManager::UpdateGeometryShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines)
+{
+    ID3DBlob* GSBlob = nullptr;
+
+    const std::filesystem::path current = std::filesystem::current_path();
+    const std::filesystem::path fullpath = *InFullPath;
+
+    ID3D11GeometryShader* GeometryShader;
+    GraphicDevice->CreateGeometryShader(fullpath, pDefines, &GSBlob, &GeometryShader);
+    
+    std::filesystem::file_time_type CurrentVSWriteTime = std::filesystem::last_write_time(fullpath);
+#if USE_WIDECHAR
+    AddOrSetGeometryShader(InShaderName, fullpath.wstring(), GeometryShader, GSBlob, pDefines, CurrentVSWriteTime);
+#else
+    AddOrSetGeometryShader(InShaderName, fullpath.string(), GeometryShader, GSBlob, pDefines, CurrentVSWriteTime);
+#endif
+}
+
 void FRenderResourceManager::CreatePixelShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines)
 {
     ID3DBlob* PSBlob = nullptr;
@@ -331,6 +380,10 @@ void FRenderResourceManager::CreatePixelShader(const FString& InShaderName, cons
     if (PixelShader == nullptr)
     {
         GraphicDevice->CreatePixelShader(fullpath, pDefines, &PSBlob, &PixelShader);
+    }
+    else
+    {
+        GraphicDevice->CompilePixelShader(fullpath, pDefines, &PSBlob);
     }
 
     std::filesystem::file_time_type CurrentPSWriteTime = std::filesystem::last_write_time(fullpath);
@@ -348,20 +401,55 @@ void FRenderResourceManager::UpdatePixelShader(const FString& InShaderName, cons
     const std::filesystem::path fullpath = *InFullPath;
 
     ID3D11PixelShader* PixelShader;
-    if (pDefines != nullptr)
-    {
-        GraphicDevice->CreatePixelShader(fullpath, pDefines, &PSBlob, &PixelShader);
-    }
-    else
-    {
-        GraphicDevice->CreatePixelShader(fullpath.string(), nullptr, &PSBlob, &PixelShader);
-    }
+    GraphicDevice->CreatePixelShader(fullpath, pDefines, &PSBlob, &PixelShader);
 
     std::filesystem::file_time_type CurrentPSWriteTime = std::filesystem::last_write_time(fullpath);
 #if USE_WIDECHAR
     AddOrSetPixelShader(InShaderName, fullpath.wstring(), PixelShader, PSBlob, pDefines, CurrentPSWriteTime);
 #else
     AddOrSetPixelShader(InShaderName, fullpath.string(), PixelShader, PSBlob, pDefines, CurrentPSWriteTime);
+#endif
+}
+
+void FRenderResourceManager::CreateComputeShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines)
+{
+    ID3DBlob* CSBlob = nullptr;
+    
+    const std::filesystem::path current = std::filesystem::current_path();
+    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
+
+    ID3D11ComputeShader* ComputeShader = GetComputeShader(InShaderName);
+    if (ComputeShader == nullptr)
+    {
+        GraphicDevice->CreateComputeShader(fullpath, pDefines, &CSBlob, &ComputeShader);
+    }
+    else
+    {
+        GraphicDevice->CompileComputeShader(fullpath, pDefines, &CSBlob);
+    }
+
+    std::filesystem::file_time_type CurrentPSWriteTime = std::filesystem::last_write_time(fullpath);
+#if USE_WIDECHAR
+    AddOrSetComputeShader(InShaderName, fullpath.wstring(), PixelShader, PSBlob, pDefines, CurrentPSWriteTime);
+#else
+    AddOrSetComputeShader(InShaderName, fullpath.string(), ComputeShader, CSBlob, pDefines, CurrentPSWriteTime);
+#endif
+}
+
+void FRenderResourceManager::UpdateComputeShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines)
+{
+    ID3DBlob* CSBlob = nullptr;
+    
+    const std::filesystem::path fullpath = *InFullPath;
+
+    ID3D11ComputeShader* ComputeShader;
+    GraphicDevice->CreateComputeShader(fullpath, pDefines, &CSBlob, &ComputeShader);
+
+    std::filesystem::file_time_type CurrentPSWriteTime = std::filesystem::last_write_time(fullpath);
+#if USE_WIDECHAR
+    AddOrSetComputeShader(InShaderName, fullpath.wstring(), ComputeShader, PSBlob, pDefines, CurrentPSWriteTime);
+#else
+    AddOrSetComputeShader(InShaderName, fullpath.string(), ComputeShader, CSBlob, pDefines, CurrentPSWriteTime);
 #endif
 }
 
@@ -375,6 +463,16 @@ void FRenderResourceManager::AddOrSetVertexShader(const FName InVSName, const FS
     VertexShaders.Add(InVSName, std::make_shared<FVertexShader>(InVSName, InFullPath, InVS, InShaderBlob, InShaderMacro, InWriteTime));
 }
 
+void FRenderResourceManager::AddOrSetGeometryShader(const FString& InGSName, const FString& InFullPath, ID3D11GeometryShader* InGS,
+    ID3DBlob* InShaderBlob, D3D_SHADER_MACRO* InShaderMacro, std::filesystem::file_time_type InWriteTime)
+{
+    if (GeometryShaders.Contains(InGSName))
+    {
+        GeometryShaders[InGSName]->Release();
+    }
+    GeometryShaders.Add(InGSName, std::make_shared<FGeometryShader>(InGSName, InFullPath, InGS, InShaderBlob, InShaderMacro, InWriteTime));
+}
+
 void FRenderResourceManager::AddOrSetPixelShader(FName InPSName, const FString& InFullPath, ID3D11PixelShader* InPS, ID3DBlob* InShaderBlob,
                                                  D3D_SHADER_MACRO* InShaderMacro, std::filesystem::file_time_type InWriteTime)
 {
@@ -383,6 +481,16 @@ void FRenderResourceManager::AddOrSetPixelShader(FName InPSName, const FString& 
         PixelShaders[InPSName]->Release();
     }
     PixelShaders.Add(InPSName, std::make_shared<FPixelShader>(InPSName, InFullPath, InPS, InShaderBlob, InShaderMacro, InWriteTime));
+}
+
+void FRenderResourceManager::AddOrSetComputeShader(FName InPSName, const FString& InFullPath, ID3D11ComputeShader* InCS, ID3DBlob* InShaderBlob,
+    D3D_SHADER_MACRO* InShaderMacro, std::filesystem::file_time_type InWriteTime)
+{
+    if (ComputeShaders.Contains(InPSName))
+    {
+        ComputeShaders[InPSName]->Release();
+    }
+    ComputeShaders.Add(InPSName, std::make_shared<FComputeShader>(InPSName, InFullPath, InCS, InShaderBlob, InShaderMacro, InWriteTime));
 }
 
 void FRenderResourceManager::AddOrSetInputLayout(const FName InInputLayoutName, ID3D11InputLayout* InInputLayout)
@@ -396,11 +504,11 @@ void FRenderResourceManager::AddOrSetInputLayout(const FName InInputLayoutName, 
 
 void FRenderResourceManager::AddOrSetComputeShader(const FName InCSName, ID3D11ComputeShader* InShader)
 {
-    if (ComputeShaders.Contains(InCSName))
+    if (RawComputeShaders.Contains(InCSName))
     {
-        ComputeShaders[InCSName]->Release();
+        RawComputeShaders[InCSName]->Release();
     }
-    ComputeShaders.Add(InCSName, InShader);
+    RawComputeShaders.Add(InCSName, InShader);
 }
 
 void FRenderResourceManager::AddOrSetVertexBuffer(const FName InVBName, ID3D11Buffer* InBuffer)
@@ -504,6 +612,24 @@ ID3DBlob* FRenderResourceManager::GetVertexShaderBlob(const FName InVSName)
     return nullptr;
 }
 
+ID3D11GeometryShader* FRenderResourceManager::GetGeometryShader(const FName InGSName)
+{
+    if (GeometryShaders.Contains(InGSName))
+    {
+        return GeometryShaders[InGSName]->GetGeometryShader();
+    }
+    return nullptr;
+}
+
+ID3DBlob* FRenderResourceManager::GetGeometryShaderBlob(const FName InGSName)
+{
+    if (GeometryShaders.Contains(InGSName))
+    {
+        return GeometryShaders[InGSName]->GetShaderBlob();
+    }
+    return nullptr;
+}
+
 ID3D11PixelShader* FRenderResourceManager::GetPixelShader(const FName InPSName)
 {
     if (PixelShaders.Contains(InPSName))
@@ -536,11 +662,19 @@ ID3D11ComputeShader* FRenderResourceManager::GetComputeShader(const FName InCSNa
 {
     if (ComputeShaders.Contains(InCSName))
     {
-        return ComputeShaders[InCSName];
+        return ComputeShaders[InCSName]->GetComputeShader();
     }
     return nullptr;
 }
 
+ID3DBlob* FRenderResourceManager::GetComputeShaderBlob(const FName InCSName)
+{
+    if (ComputeShaders.Contains(InCSName))
+    {
+        return ComputeShaders[InCSName]->GetShaderBlob();
+    }
+    return nullptr;
+}
 ID3D11Buffer* FRenderResourceManager::GetVertexBuffer(const FName InVBName)
 {
     if (VertexBuffers.Contains(InVBName))

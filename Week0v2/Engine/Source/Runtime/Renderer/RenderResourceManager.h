@@ -4,6 +4,8 @@
 #include "Container/Map.h"
 #include "D3D11RHI/GraphicDevice.h"
 
+class FGeometryShader;
+class FComputeShader;
 class FPixelShader;
 class FVertexShader;
 class FVBIBTopologyMapping;
@@ -68,13 +70,24 @@ public:
     void CreateVertexShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines);
     void UpdateVertexShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines);
     
+    void CreateGeometryShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines);
+    void UpdateGeometryShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines);
+    
     void CreatePixelShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines);
     void UpdatePixelShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines);
+
+    void CreateComputeShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines);
+    void UpdateComputeShader(const FString& InShaderName, const FString& InFullPath, D3D_SHADER_MACRO* pDefines);
     
     void AddOrSetVertexShader(FName InVSName, const FString& InFullPath, ID3D11VertexShader* InVS, ID3DBlob* InShaderBlob, D3D_SHADER_MACRO*
                               InShaderMacro, std::filesystem::file_time_type InWriteTime);
+    void AddOrSetGeometryShader(const FString& InGSName, const FString& InFullPath, ID3D11GeometryShader* InGS, ID3DBlob* InShaderBlob, D3D_SHADER_MACRO* InShaderMacro,
+                           std::filesystem::file_time_type InWriteTime);
     void AddOrSetPixelShader(FName InPSName, const FString& InFullPath, ID3D11PixelShader* InPS, ID3DBlob* InShaderBlob, D3D_SHADER_MACRO*
                              InShaderMacro, std::filesystem::file_time_type InWriteTime);
+    void AddOrSetComputeShader(FName InPSName, const FString& InFullPath, ID3D11ComputeShader* InCS, ID3DBlob* InShaderBlob, D3D_SHADER_MACRO*
+                             InShaderMacro, std::filesystem::file_time_type InWriteTime);
+    
     void AddOrSetInputLayout(FName InInputLayoutName, ID3D11InputLayout* InInputLayout);
 
     void AddOrSetVertexBuffer(FName InVBName, ID3D11Buffer* InBuffer);
@@ -87,10 +100,15 @@ public:
     
     ID3D11VertexShader* GetVertexShader(const FName InVSName);
     ID3DBlob* GetVertexShaderBlob(const FName InVSName);
-    ID3D11PixelShader* GetPixelShader(const FName InPSName);
-    ID3D11ComputeShader* GetComputeShader(const FName InCSName);
 
+    ID3D11GeometryShader* GetGeometryShader(const FName InGSName);
+    ID3DBlob* GetGeometryShaderBlob(const FName InGSName);
+    
+    ID3D11PixelShader* GetPixelShader(const FName InPSName);
     ID3DBlob* GetPixelShaderBlob(const FName InPSName);
+    
+    ID3D11ComputeShader* GetComputeShader(const FName InCSName);
+    ID3DBlob* GetComputeShaderBlob(const FName InCSName);
 
     ID3D11InputLayout* GetInputLayout(const FName InInputLayoutName) const;
 
@@ -108,9 +126,13 @@ private:
     FGraphicsDevice* GraphicDevice = nullptr;
     
 private:
-    TMap<FName, ID3D11ComputeShader*> ComputeShaders;
+    TMap<FName, ID3D11ComputeShader*> RawComputeShaders;
+    
     TMap<FName, std::shared_ptr<FVertexShader>> VertexShaders;
+    TMap<FName, std::shared_ptr<FGeometryShader>> GeometryShaders;
     TMap<FName, std::shared_ptr<FPixelShader>> PixelShaders;
+    TMap<FName, std::shared_ptr<FComputeShader>> ComputeShaders;
+    
     TMap<FName, ID3D11InputLayout*> InputLayouts;
 
     TMap<FName, ID3D11Buffer*> VertexBuffers;
