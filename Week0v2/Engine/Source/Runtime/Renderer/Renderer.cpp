@@ -48,7 +48,9 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     RenderResourceManager = new FRenderResourceManager(graphics);
     RenderResourceManager->Initialize();
 
-    CreateComputeShader();
+    //CreateComputeShader();
+    CreateComputeShader(TEXT("TileLightCulling"), nullptr);
+    ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
     
     D3D_SHADER_MACRO defines[] = 
     {
@@ -184,6 +186,31 @@ void FRenderer::CreateVertexPixelShader(const FString& InPrefix, D3D_SHADER_MACR
     MappingVSPSCBSlot(Prefix, ShaderStageToCB);
 }
 
+void FRenderer::CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines)
+{
+    FString Prefix = InPrefix;
+    if (pDefines != nullptr)
+    {
+#if USE_WIDECHAR
+        Prefix += ConvertAnsiToWchar(pDefines->Name);
+#else
+        Prefix += pDefines->Name;
+#endif
+    }
+    // 접미사를 각각 붙여서 전체 파일명 생성
+    const FString ComputeShaderFile = InPrefix + TEXT("ComputeShader.hlsl");
+    const FString ComputeShaderName = Prefix + TEXT("VertexShader.hlsl");
+    RenderResourceManager->CreateComputeShader(ComputeShaderName, ComputeShaderFile, pDefines);
+
+    ID3DBlob* ComputeShaderBlob = RenderResourceManager->GetComputeShaderBlob(ComputeShaderName);
+    TArray<FConstantBufferInfo> PixelStaticMeshConstant;
+    Graphics->ExtractPixelShaderInfo(ComputeShaderBlob, PixelStaticMeshConstant);
+    
+    TMap<FShaderConstantKey, uint32> ShaderStageToCB;
+
+    CreateMappedCB(ShaderStageToCB, PixelStaticMeshConstant, EShaderStage::CS);  
+}
+
 #pragma region Shader
 
 void FRenderer::CreateComputeShader()
@@ -194,11 +221,11 @@ void FRenderer::CreateComputeShader()
     
     if (ComputeShader == nullptr)
     {
-        Graphics->CreateComputeShader(TEXT("TileLightCulling.compute"), nullptr, &CSBlob_LightCulling, &ComputeShader);
+        Graphics->CreateComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr, &CSBlob_LightCulling, &ComputeShader);
     }
     else
     {
-        FGraphicsDevice::CompileComputeShader(TEXT("TileLightCulling.compute"), nullptr,  &CSBlob_LightCulling);
+        FGraphicsDevice::CompileComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr,  &CSBlob_LightCulling);
     }
     RenderResourceManager->AddOrSetComputeShader(TEXT("TileLightCulling"), ComputeShader);
     

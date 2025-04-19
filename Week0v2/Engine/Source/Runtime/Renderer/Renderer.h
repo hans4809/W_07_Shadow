@@ -23,6 +23,7 @@ class FRenderer
 {
 private:
     void CreateVertexPixelShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
+    void CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
     void CreateComputeShader();
     //void CreateStaticMeshShader();
     //void CreateTextureShader();

@@ -483,10 +483,10 @@
     <FxCompile Include="Shaders\UberLitVertexShader.hlsl" />
     <FxCompile Include="Shaders\EditorVertexShader.hlsl" />
     <FxCompile Include="Shaders\EditorPixelShader.hlsl" />
-    <FxCompile Include="Shaders\TileLightCulling.compute" />
     <FxCompile Include="Shaders\ShadowMapVertexShader.hlsl" />
     <FxCompile Include="Shaders\ShadowMapPixelShader.hlsl" />
     <FxCompile Include="Shaders\ShadowMapGeometryShader.hlsl" />
+    <FxCompile Include="Shaders\TileLightCullingComputeShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
