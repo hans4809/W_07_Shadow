@@ -1,12 +1,10 @@
 #include "SpotLightComponent.h"
 #include "UObject/ObjectFactory.h"
-#include "CoreUObject/UObject/Casts.h"
 #include "Math/JungleMath.h"
 
 USpotLightComponent::USpotLightComponent()
     : Super()
 {
-
 }
 
 USpotLightComponent::USpotLightComponent(const USpotLightComponent& Other)
@@ -14,19 +12,16 @@ USpotLightComponent::USpotLightComponent(const USpotLightComponent& Other)
     , InnerConeAngle(Other.InnerConeAngle)
     , OuterConeAngle(Other.OuterConeAngle)
 {
-
 }
 
-void USpotLightComponent::SetInnerConeAngle(float Angle)
+void USpotLightComponent::SetInnerConeAngle(float AngleDegrees)
 {
-    Angle = JungleMath::DegToRad(Angle);
-    InnerConeAngle = Angle;
+    InnerConeAngle = JungleMath::DegToRad(AngleDegrees);
 }
 
-void USpotLightComponent::SetOuterConeAngle(float Angle)
+void USpotLightComponent::SetOuterConeAngle(float AngleDegrees)
 {
-    Angle = JungleMath::DegToRad(Angle);
-    OuterConeAngle = Angle;
+    OuterConeAngle = JungleMath::DegToRad(AngleDegrees);
 }
 
 UObject* USpotLightComponent::Duplicate() const
@@ -34,7 +29,6 @@ UObject* USpotLightComponent::Duplicate() const
     USpotLightComponent* NewComp = FObjectFactory::ConstructObjectFrom<USpotLightComponent>(this);
     NewComp->DuplicateSubObjects(this);
     NewComp->PostDuplicate();
-
     return NewComp;
 }
 
@@ -45,6 +39,7 @@ void USpotLightComponent::DuplicateSubObjects(const UObject* Source)
 
 void USpotLightComponent::PostDuplicate()
 {
+    // Custom duplication logic if needed
 }
 
 std::shared_ptr<FActorComponentInfo> USpotLightComponent::GetActorComponentInfo()
@@ -61,7 +56,8 @@ std::shared_ptr<FActorComponentInfo> USpotLightComponent::GetActorComponentInfo(
 void USpotLightComponent::LoadAndConstruct(const FActorComponentInfo& Info)
 {
     Super::LoadAndConstruct(Info);
-    const FSpotlightComponentInfo& PointLightInfo = static_cast<const FSpotlightComponentInfo&>(Info);
-    InnerConeAngle = PointLightInfo.InnerConeAngle;
-    OuterConeAngle = PointLightInfo.OuterConeAngle;
+    const FSpotlightComponentInfo& SpotInfo = static_cast<const FSpotlightComponentInfo&>(Info);
+
+    InnerConeAngle = SpotInfo.InnerConeAngle;
+    OuterConeAngle = SpotInfo.OuterConeAngle;
 }

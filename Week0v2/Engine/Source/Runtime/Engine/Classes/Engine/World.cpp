@@ -7,6 +7,8 @@
 #include "Engine/FLoaderOBJ.h"
 #include "UObject/UObjectIterator.h"
 #include "Level.h"
+#include "LightManager.h"
+#include "Actors/AmbientLightActor.h"
 #include "Serialization/FWindowsBinHelper.h"
 
 
@@ -25,6 +27,11 @@ void UWorld::InitWorld()
     PreLoadResources();
     CreateBaseObject();
     Level = FObjectFactory::ConstructObject<ULevel>();
+    if (!GEngine->renderer.LightManager->HasAmbientLight()) {
+        // AmbientLightActor가 없을 경우에만 생성
+        AActor* SpawnedActor = SpawnActor<AAmbientLightActor>();
+        SpawnedActor->SetActorLabel(TEXT("OBJ_AMBIENTLIGHT"));
+    }
 }
 
 void UWorld::LoadLevel(const FString& LevelName)
@@ -50,6 +57,7 @@ void UWorld::CreateBaseObject()
     {
         LocalGizmo = FObjectFactory::ConstructObject<UTransformGizmo>();
     }
+
 }
 
 void UWorld::ReleaseBaseObject()

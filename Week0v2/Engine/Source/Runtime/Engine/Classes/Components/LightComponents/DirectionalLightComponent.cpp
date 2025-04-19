@@ -8,7 +8,6 @@ UDirectionalLightComponent::UDirectionalLightComponent()
 
 UDirectionalLightComponent::UDirectionalLightComponent(const UDirectionalLightComponent& Other)
     : Super(Other)
-    , Direction(Other.Direction)
 {
 }
 
@@ -35,7 +34,6 @@ void UDirectionalLightComponent::DuplicateSubObjects(const UObject* Source)
     Super::DuplicateSubObjects(Source);
     // 여기서 복사할 것? 방향뿐임
     UDirectionalLightComponent* SourceComp = Cast<UDirectionalLightComponent>(Source);
-    SourceComp->Direction = Direction;
 }
 
 void UDirectionalLightComponent::PostDuplicate()
@@ -46,7 +44,6 @@ std::shared_ptr<FActorComponentInfo> UDirectionalLightComponent::GetActorCompone
 {
     std::shared_ptr<FDirectionalLightComponentInfo> Info = std::make_shared<FDirectionalLightComponentInfo>();
     Super::GetActorComponentInfo()->Copy(*Info);
-    Info->Direction = Direction;
     return Info;
 }
 
@@ -54,5 +51,4 @@ void UDirectionalLightComponent::LoadAndConstruct(const FActorComponentInfo& Inf
 {
     Super::LoadAndConstruct(Info);
     const FDirectionalLightComponentInfo& DirectionalLightInfo = static_cast<const FDirectionalLightComponentInfo&>(Info);
-    Direction = DirectionalLightInfo.Direction;
 }

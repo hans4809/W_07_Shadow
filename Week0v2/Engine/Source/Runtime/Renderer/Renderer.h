@@ -10,6 +10,7 @@
 #include "RenderPass/DebugDepthRenderPass.h"
 #include "RenderPass/FogRenderPass.h"
 
+class FLightManager;
 class FComputeTileLightCulling;
 class FEditorIconRenderPass;
 class FGizmoRenderPass;
@@ -31,6 +32,7 @@ private:
 
 public:
     FGraphicsDevice* Graphics;
+    FLightManager* LightManager = nullptr;
     ID3D11SamplerState* GetSamplerState(const ESamplerType InType) const { return RenderResourceManager->GetSamplerState(InType); }
     ID3D11RasterizerState* GetRasterizerState(const ERasterizerState InState) const { return RenderResourceManager->GetRasterizerState(InState); }
     ID3D11BlendState* GetBlendState(const EBlendState InState) const { return RenderResourceManager->GetBlendState(InState); }

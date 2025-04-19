@@ -1,7 +1,7 @@
 #pragma once
-#include "DirectionalLightComponent.h"
+#include "PointLightComponent.h"
 
-struct FSpotlightComponentInfo : public FDirectionalLightComponentInfo
+struct FSpotlightComponentInfo : public FPointLightComponentInfo
 {
     DECLARE_ACTORCOMPONENT_INFO(FSpotlightComponentInfo);
 
@@ -9,9 +9,9 @@ struct FSpotlightComponentInfo : public FDirectionalLightComponentInfo
     float OuterConeAngle;
 
     FSpotlightComponentInfo()
-        :FDirectionalLightComponentInfo()
+        : FPointLightComponentInfo()
         , InnerConeAngle(0.0f)
-        , OuterConeAngle(0.768f)
+        , OuterConeAngle(0.768f) // radian
     {
         InfoType = TEXT("FSpotLightComponentInfo");
         ComponentType = TEXT("USpotLightComponent");
@@ -19,7 +19,7 @@ struct FSpotlightComponentInfo : public FDirectionalLightComponentInfo
 
     virtual void Copy(FActorComponentInfo& Other) override
     {
-        FDirectionalLightComponentInfo::Copy(Other);
+        FPointLightComponentInfo::Copy(Other);
         FSpotlightComponentInfo& SpotLightInfo = static_cast<FSpotlightComponentInfo&>(Other);
         SpotLightInfo.InnerConeAngle = InnerConeAngle;
         SpotLightInfo.OuterConeAngle = OuterConeAngle;
@@ -27,40 +27,41 @@ struct FSpotlightComponentInfo : public FDirectionalLightComponentInfo
 
     virtual void Serialize(FArchive& ar) const override
     {
-        FDirectionalLightComponentInfo::Serialize(ar);
+        FPointLightComponentInfo::Serialize(ar);
         ar << InnerConeAngle << OuterConeAngle;
     }
 
     virtual void Deserialize(FArchive& ar) override
     {
-        FDirectionalLightComponentInfo::Deserialize(ar);
+        FPointLightComponentInfo::Deserialize(ar);
         ar >> InnerConeAngle >> OuterConeAngle;
     }
 };
 
-class USpotLightComponent : public UDirectionalLightComponent
+class USpotLightComponent : public UPointLightComponent
 {
-    DECLARE_CLASS(USpotLightComponent, UDirectionalLightComponent)
+    DECLARE_CLASS(USpotLightComponent, UPointLightComponent)
+
 public:
     USpotLightComponent();
     USpotLightComponent(const USpotLightComponent& Other);
     virtual ~USpotLightComponent() override = default;
+
 protected:
-    //angle은 내부적으로 radian
     float InnerConeAngle = 0.0f;
     float OuterConeAngle = 0.768f;
 
 public:
     float GetInnerConeAngle() const { return InnerConeAngle; }
     float GetOuterConeAngle() const { return OuterConeAngle; }
-    //외부에서 set 해줄때는 degree로 들어옴
-    void SetInnerConeAngle(float Angle);
-    void SetOuterConeAngle(float Angle);
+
+    void SetInnerConeAngle(float AngleDegrees);
+    void SetOuterConeAngle(float AngleDegrees);
+
     virtual UObject* Duplicate() const override;
     virtual void DuplicateSubObjects(const UObject* Source) override;
     virtual void PostDuplicate() override;
 
-public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
 };

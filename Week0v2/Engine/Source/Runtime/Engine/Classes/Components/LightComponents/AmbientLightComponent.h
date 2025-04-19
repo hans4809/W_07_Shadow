@@ -2,22 +2,22 @@
 #include "LightComponent.h"
 #include "Actors/Light.h"
 
-struct FDirectionalLightComponentInfo : public FLightComponentInfo
+struct FAmbientLightComponentInfo : public FLightComponentInfo
 {
-    DECLARE_ACTORCOMPONENT_INFO(FDirectionalLightComponentInfo);
+    DECLARE_ACTORCOMPONENT_INFO(FAmbientLightComponentInfo);
 
 
-    FDirectionalLightComponentInfo()
+    FAmbientLightComponentInfo()
         : FLightComponentInfo()
     {
-        InfoType = TEXT("FDirectionalLightComponentInfo");
-        ComponentType = TEXT("UDirectionalLightComponent");
+        InfoType = TEXT("FAmbientLightComponentInfo");
+        ComponentType = TEXT("UAmbientLightComponent");
     }
 
     virtual void Copy(FActorComponentInfo& Other) override
     {
         FLightComponentInfo::Copy(Other);
-        FDirectionalLightComponentInfo& DirectionalLightInfo = static_cast<FDirectionalLightComponentInfo&>(Other);
+        FAmbientLightComponentInfo& AmbientLightInfo = static_cast<FAmbientLightComponentInfo&>(Other);
     }
     virtual void Serialize(FArchive& ar) const override
     {
@@ -28,13 +28,14 @@ struct FDirectionalLightComponentInfo : public FLightComponentInfo
         FLightComponentInfo::Deserialize(ar);
     }
 };
-class UDirectionalLightComponent : public ULightComponent
+class UAmbientLightComponent : public ULightComponent
 {
-    DECLARE_CLASS(UDirectionalLightComponent, ULightComponent)
+    DECLARE_CLASS(UAmbientLightComponent, ULightComponent)
 public:
-    UDirectionalLightComponent();
-    UDirectionalLightComponent(const UDirectionalLightComponent& Other);
-    virtual ~UDirectionalLightComponent() override = default;
+    UAmbientLightComponent();
+    UAmbientLightComponent(const UAmbientLightComponent& Other);
+    virtual ~UAmbientLightComponent() override = default;
+private:
 public:
 
 public:

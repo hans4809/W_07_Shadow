@@ -47,9 +47,9 @@ void PropertyEditorPanel::Render()
     ImGui::Begin("Detail", nullptr, PanelFlags);
 
     AEditorPlayer* player = GEngine->GetWorld()->GetEditorPlayer();
-    AActor* PickedActor = nullptr; 
+    AActor* PickedActor = nullptr;
     if (!GEngine->GetWorld()->GetSelectedActors().IsEmpty())
-            PickedActor = *GEngine->GetWorld()->GetSelectedActors().begin();
+        PickedActor = *GEngine->GetWorld()->GetSelectedActors().begin();
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
     if (PickedActor)
@@ -234,7 +234,7 @@ void PropertyEditorPanel::Render()
                 SceneComp->SetRelativeRotation(Rotation);
                 SceneComp->SetScale(Scale);
             }
-            
+
             //always local
             //std::string coordiButtonLabel;
             //if (player->GetCoordiMode() == CoordiMode::CDM_WORLD)
@@ -354,26 +354,7 @@ void PropertyEditorPanel::Render()
             }*/
         }
 
-        if (PickedComponent->IsA<UPointLightComponent>())
-        {
-            // radius
-            UPointLightComponent* PointLight = Cast<UPointLightComponent>(PickedComponent);
-            if (PointLight)
-            {
-                float radiusVal = PointLight->GetRadius();
-                if (ImGui::SliderFloat("Radius", &radiusVal, 1.0f, 100.0f))
-                {
-                    PointLight->SetRadius(radiusVal);
-                }
-                ImGui::Spacing();
-                //float attenuationVal = PointLight->GetAttenuationFalloff();
-                //if (ImGui::SliderFloat("Attenuation", &attenuationVal, 0.0001f, 0.001f))
-                //{
-                //    PointLight->SetAttenuationFallOff(attenuationVal);
-                //}
-            }
-        }
-
+        // 먼저 SpotLight 체크
         if (PickedComponent->IsA<USpotLightComponent>())
         {
             USpotLightComponent* SpotLight = Cast<USpotLightComponent>(PickedComponent);
@@ -382,24 +363,49 @@ void PropertyEditorPanel::Render()
                 float OuterAngle = JungleMath::RadToDeg(SpotLight->GetOuterConeAngle());
                 float InnerAngle = JungleMath::RadToDeg(SpotLight->GetInnerConeAngle());
 
-                // 먼저 Outer 처리
                 if (ImGui::SliderFloat("Outer Angle", &OuterAngle, 0.0f, 89.9f))
                 {
                     SpotLight->SetOuterConeAngle(OuterAngle);
-
-                    // Outer를 줄였으면 Inner도 맞춰줌
                     InnerAngle = FMath::Min(InnerAngle, OuterAngle);
                     SpotLight->SetInnerConeAngle(InnerAngle);
                 }
 
-                // Inner는 항상 Outer보다 작게 clamp
                 if (ImGui::SliderFloat("Inner Angle", &InnerAngle, 0.0f, OuterAngle))
                 {
                     InnerAngle = FMath::Clamp(InnerAngle, 0.0f, OuterAngle);
                     SpotLight->SetInnerConeAngle(InnerAngle);
                 }
+
+                float radiusVal = SpotLight->GetRadius();
+                if (ImGui::SliderFloat("Radius", &radiusVal, 1.0f, 100.0f))
+                {
+                    SpotLight->SetRadius(radiusVal);
+                }
+                float falloffVal = SpotLight->GetAttenuationFalloff();
+                if (ImGui::SliderFloat("Falloff", &falloffVal, 0.0001f, 100.0f,"%.4f"))
+                {
+                    SpotLight->SetAttenuationFallOff(falloffVal);
+                }
+                ImGui::Spacing();
             }
         }
+
+        // PointLight는 순수한 경우만
+        else if (PickedComponent->IsA<UPointLightComponent>())
+        {
+            UPointLightComponent* PointLight = Cast<UPointLightComponent>(PickedComponent);
+            if (PointLight)
+            {
+                float radiusVal = PointLight->GetRadius();
+                if (ImGui::SliderFloat("Radius", &radiusVal, 1.0f, 100.0f))
+                {
+                    PointLight->SetRadius(radiusVal);
+                }
+
+                ImGui::Spacing();
+            }
+        }
+
     }
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기

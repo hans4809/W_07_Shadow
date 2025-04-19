@@ -17,6 +17,8 @@
 #include <Actors/ExponentialHeightFog.h>
 #include <UObject/UObjectIterator.h>
 
+#include "LightManager.h"
+#include "Actors/AmbientLightActor.h"
 #include "Components/PrimitiveComponents/UParticleSubUVComp.h"
 #include "Components/PrimitiveComponents/UTextComponent.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
@@ -72,7 +74,7 @@ void ControlEditorPanel::Render()
     CreateShaderHotReloadButton(IconSize);
 
     ImGui::SameLine();
-    
+
     ImVec2 PIEIconSize = ImVec2(IconSize.x + 8, IconSize.y);
     ImGui::PushFont(IconFont);
     CreatePIEButton(PIEIconSize);
@@ -281,6 +283,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
             { "Lights", "Spot Light",      OBJ_SPOTLIGHT },
             { "Lights", "Point Light",     OBJ_POINTLIGHT },
             { "Lights", "Directional Light", OBJ_DIRECTIONALLIGHT },
+            { "Lights", "Ambient Light", OBJ_AMBIENTLIGHT },
 
             // 🔷 셰이프
             { "Shapes", "Cube",            OBJ_CUBE },
@@ -374,11 +377,20 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                 }
                 case OBJ_DIRECTIONALLIGHT:
                 {
-                    SpawnedActor = World->SpawnActor<ADirectionalLightActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_DIRECTIONALLIGHT"));
+                    if (!GEngine->renderer.LightManager->HasDirectionalLight()) {
+                        SpawnedActor = World->SpawnActor<ADirectionalLightActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_DIRECTIONALLIGHT"));
+                    }
                     break;
                 }
-
+                case OBJ_AMBIENTLIGHT:
+                {
+                    if (!GEngine->renderer.LightManager->HasAmbientLight()) {
+                        SpawnedActor = World->SpawnActor<AAmbientLightActor>();
+                        SpawnedActor->SetActorLabel(TEXT("OBJ_AMBIENTLIGHT"));
+                    }
+                    break;
+                }
                 // ✨ 효과
                 case OBJ_PARTICLE:
                 {
@@ -409,7 +421,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
                         {
                             actor->Destroy();
                             TSet<AActor*> Actors = GEngine->GetWorld()->GetSelectedActors();
-                            if(Actors.Contains(actor))
+                            if (Actors.Contains(actor))
                                 GEngine->GetWorld()->ClearSelectedActors();
                         }
                     }
@@ -473,7 +485,7 @@ void ControlEditorPanel::CreateFlagButton() const
 
     ImGui::SameLine();
 
-    const char* ViewModeNames[] = { "Goroud_Lit", "Lambert_Lit", "Phong_Lit", "Unlit", "Wireframe", "Depth", "Normal"};
+    const char* ViewModeNames[] = { "Goroud_Lit", "Lambert_Lit", "Phong_Lit", "Unlit", "Wireframe", "Depth", "Normal" };
     FString SelectLightControl = ViewModeNames[static_cast<uint32>(ActiveViewport->GetViewMode())];
     ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
 

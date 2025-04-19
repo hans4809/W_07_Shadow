@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include <d3dcompiler.h>
 
+#include "LightManager.h"
 #include "VBIBTopologyMapping.h"
 #include "ComputeShader/ComputeTileLightCulling.h"
 #include "Engine/World.h"
@@ -43,6 +44,7 @@ D3D_SHADER_MACRO FRenderer::EditorIconDefines[] =
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
+    LightManager = new FLightManager();
     RenderResourceManager = new FRenderResourceManager(graphics);
     RenderResourceManager->Initialize();
 
@@ -237,7 +239,12 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     //값을 써줄때 
     
     ComputeTileLightCulling->Dispatch(ActiveViewport);
-    
+
+    LightManager->CollectLights(World);
+    FMatrix View = ActiveViewport->GetViewMatrix();
+    FMatrix Proj = ActiveViewport->GetProjectionMatrix();
+    FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
+    LightManager->CullLights(Frustum);
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         //TODO : FLAG로 나누기
