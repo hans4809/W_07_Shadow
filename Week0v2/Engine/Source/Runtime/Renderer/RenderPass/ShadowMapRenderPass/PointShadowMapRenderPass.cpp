@@ -20,7 +20,6 @@ FPointShadowMapRenderPass::FPointShadowMapRenderPass(const FName& InShaderName)
 
 FPointShadowMapRenderPass::~FPointShadowMapRenderPass()
 {
-    PointLightComponents.Empty();
 }
 
 void FPointShadowMapRenderPass::AddRenderObjectsToRenderPass(UWorld* InLevel)
@@ -51,5 +50,4 @@ void FPointShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewp
 void FPointShadowMapRenderPass::ClearRenderObjects()
 {
     FShadowMapRenderPass::ClearRenderObjects();
-    PointLightComponents.Empty();
 }

@@ -313,6 +313,12 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     
     ComputeTileLightCulling->Dispatch(ActiveViewport);
 
+    if (LightManager->GetDirectionalLight() != nullptr)
+    {
+        DirectionalShadowMapRenderPass->Prepare(ActiveViewport);
+        DirectionalShadowMapRenderPass->Execute(ActiveViewport);
+    }
+    
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         //TODO : FLAG로 나누기
@@ -360,6 +366,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 
 void FRenderer::ClearRenderObjects() const
 {
+    DirectionalShadowMapRenderPass->ClearRenderObjects();
     GoroudRenderPass->ClearRenderObjects();
     LambertRenderPass->ClearRenderObjects();
     PhongRenderPass->ClearRenderObjects();
@@ -434,6 +441,8 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
     LightManager->CullLights(Frustum);
     
     ComputeTileLightCulling->AddRenderObjectsToRenderPass(InWorld);
+
+    DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
     {

@@ -1,5 +1,5 @@
 
-float4 mainPS() : SV_TARGET
+float mainPS() : SV_Depth
 {
-	return float4(0, 0, 0, 0);
+    return 0;
 }

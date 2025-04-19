@@ -11,6 +11,7 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
     CreateSceneColorResources();
+    CreateDirectionalLightShadowMap();
 
     //CreateDepthStencilState();
     //CreateDepthStencilSRV();
@@ -101,6 +102,42 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
         MessageBox(hWindow, errorMsg, L"Error", MB_ICONERROR | MB_OK);
         return;
     }
+}
+
+void FGraphicsDevice::CreateDirectionalLightShadowMap()
+{
+    // 사전에 한 번만: 그림자 맵 해상도
+    static const UINT SM_SIZE = 2048;
+
+    // 1) ShadowMap 텍스쳐
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width     = SM_SIZE;
+    texDesc.Height    = SM_SIZE;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 4;
+    texDesc.Format    = DXGI_FORMAT_R32_TYPELESS;
+    texDesc.SampleDesc.Count   = MAX_CASCADES;
+    texDesc.Usage            = D3D11_USAGE_DEFAULT;
+    texDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    
+    Device->CreateTexture2D(&texDesc, nullptr, &DirShadowTexture);
+
+    // 2) DSV
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format        = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+    dsvDesc.Texture2DMSArray.FirstArraySlice = 0;
+    dsvDesc.Texture2DMSArray.ArraySize = MAX_CASCADES;
+
+    Device->CreateDepthStencilView(DirShadowTexture, &dsvDesc, &DirShadowDSV);
+
+    // 3) SRV (나중에 메인 패스에서 디버깅 또는 PCF용으로 바인딩)
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format             = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+    srvDesc.Texture2DMSArray.FirstArraySlice = 0;
+    srvDesc.Texture2DMSArray.ArraySize = MAX_CASCADES;
+    Device->CreateShaderResourceView(DirShadowTexture, &srvDesc, &DirShadowSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const

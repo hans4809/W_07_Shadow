@@ -20,7 +20,6 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
 
 FSpotShadowMapRenderPass::~FSpotShadowMapRenderPass()
 {
-    SpotLightComponents.Empty();
 }
 
 void FSpotShadowMapRenderPass::AddRenderObjectsToRenderPass(UWorld* InLevel)
@@ -49,6 +48,4 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
 void FSpotShadowMapRenderPass::ClearRenderObjects()
 {
     FShadowMapRenderPass::ClearRenderObjects();
-    SpotLightComponents.Empty();
-
 }

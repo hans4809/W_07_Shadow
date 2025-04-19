@@ -1,6 +1,9 @@
 #include "ShadowMapRenderPass.h"
 
 #include "EditorEngine.h"
+#include "BaseGizmos/GizmoBaseComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
 
 FShadowMapRenderPass::FShadowMapRenderPass(const FName& InShaderName)
     : FBaseRenderPass(InShaderName)
@@ -11,9 +14,19 @@ FShadowMapRenderPass::~FShadowMapRenderPass()
 {
 }
 
-void FShadowMapRenderPass::AddRenderObjectsToRenderPass(UWorld* InLevel)
+void FShadowMapRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
 {
-    // TODO : LightComp 추가
+    for (const AActor* actor : InWorld->GetActors())
+    {
+        for (const UActorComponent* actorComp : actor->GetComponents())
+        {
+            if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(actorComp))
+            {
+                if (!Cast<UGizmoBaseComponent>(actorComp))
+                    StaticMeshComponents.Add(pStaticMeshComp);
+            }
+        }
+    }
 }
 
 void FShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
@@ -30,4 +43,5 @@ void FShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportCl
 void FShadowMapRenderPass::ClearRenderObjects()
 {
     FBaseRenderPass::ClearRenderObjects();
+    StaticMeshComponents.Empty();
 }

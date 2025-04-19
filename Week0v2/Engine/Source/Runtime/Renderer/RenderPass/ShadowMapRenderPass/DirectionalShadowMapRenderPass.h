@@ -13,5 +13,5 @@ public:
     void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     void ClearRenderObjects() override;
 private:
-    UDirectionalLightComponent* DirectionalLightComponent;
+    
 };

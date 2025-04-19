@@ -46,6 +46,10 @@ public:
     ID3D11Texture2D* DepthCopyTexture;
     ID3D11ShaderResourceView* DepthCopySRV;
 
+    ID3D11Texture2D* DirShadowTexture = nullptr;
+    ID3D11ShaderResourceView* DirShadowSRV = nullptr;
+    ID3D11DepthStencilView* DirShadowDSV = nullptr;
+
     //Fog 처리용 변수
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
     ID3D11Texture2D* SceneColorBuffer = nullptr;
@@ -56,6 +60,7 @@ public:
     void Initialize(HWND hWindow);
     void CreateDeviceAndSwapChain(HWND hWindow);
     void CreateDepthStencilBuffer(HWND hWindow);
+    void CreateDirectionalLightShadowMap();
     bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const;
     bool CreateRasterizerState(const D3D11_RASTERIZER_DESC* pRasterizerDesc, ID3D11RasterizerState** ppRasterizerState) const;
     bool CreateBlendState(const D3D11_BLEND_DESC* pBlendState, ID3D11BlendState** ppBlendState) const;

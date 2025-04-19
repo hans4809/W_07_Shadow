@@ -1,13 +1,8 @@
 #pragma once
-#include "Container/Array.h"
-#include "Math/Matrix.h"
 #include "Renderer/RenderPass/FBaseRenderPass.h"
+#include "Define.h"
 
-// 임시
-#define MAX_CASCADES 4
-#define MAX_SPOT_LIGHTS 16
-#define MAX_POINT_LIGHTS 16
-
+class UStaticMeshComponent;
 class ULightComponent;
 
 class FShadowMapRenderPass : public FBaseRenderPass
@@ -22,11 +17,11 @@ public:
     void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     void ClearRenderObjects() override;
 
-private:
+protected:
     struct alignas(16) FCascadeCB
     {
         FMatrix ModelMatrix;
-        FMatrix LightViewProjectionMatrix[MAX_CASCADES]; // per-cascade VP matrices
+        FMatrix LightVP[MAX_CASCADES]; // per-cascade VP matrices
         uint32  NumCascades;
         FVector pad;
     };
@@ -43,4 +38,6 @@ private:
         FMatrix ModelMatrix;
         uint32  NumPoints;
     };
+
+    TArray<UStaticMeshComponent*> StaticMeshComponents;
 };
