@@ -21,9 +21,7 @@ protected:
     struct alignas(16) FCascadeCB
     {
         FMatrix ModelMatrix;
-        FMatrix LightVP[MAX_CASCADES]; // per-cascade VP matrices
-        uint32  NumCascades;
-        FVector pad;
+        FMatrix LightVP; // per-cascade VP matrices
     };
 
      struct alignas(16) FSpotCB

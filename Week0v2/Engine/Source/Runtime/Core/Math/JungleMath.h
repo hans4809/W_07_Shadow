@@ -15,6 +15,7 @@ public:
     static void GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float zNear, float zFar, TArray<FVector>& outCorners);
 
     static void ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, float InCascadeNear, float InCascadeFar, FMatrix& OutLightView, FMatrix& OutLightProj);
+    static void ComputeDirLightVP(float centerX, float centerY, float centerZ, float halfWidth, float halfHeight, float nearZ, float farZ, float lightDirX, float lightDirY, float lightDirZ, FMatrix& OutView, FMatrix& OutProj);
     
     static FVector FVectorRotate(FVector& origin, const FVector& rotation);
     static FVector FVectorRotate(FVector& origin, const FQuat& rotation);

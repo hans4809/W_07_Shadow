@@ -8,16 +8,13 @@
 #include "D3D11RHI/GraphicDevice.h"
 #include "Launch/EditorEngine.h"
 #include "UnrealEd/EditorViewportClient.h"
-#include "UnrealEd/PrimitiveBatch.h"
 #include "PropertyEditor/ShowFlags.h"
-#include "UObject/UObjectIterator.h"
 #include "D3D11RHI/FShaderProgram.h"
 #include "RenderPass/EditorIconRenderPass.h"
 #include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/DirectionalShadowMapRenderPass.h"
-#include "RenderPass/ShadowMapRenderPass/ShadowMapRenderPass.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
 {
@@ -102,7 +99,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     FString DirShadowMapName = TEXT("ShadowMap");
     DirShadowMapName += DirectionalDefines->Name;
     CreateVertexPixelShader(TEXT("ShadowMap"), DirectionalDefines);
-    CreateGeometryShader(TEXT("ShadowMap"), DirectionalDefines);
+    //CreateGeometryShader(TEXT("ShadowMap"), DirectionalDefines);
     DirectionalShadowMapRenderPass = std::make_shared<FDirectionalShadowMapRenderPass>(DirShadowMapName);
 }
 
@@ -320,6 +317,8 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         DirectionalShadowMapRenderPass->Prepare(ActiveViewport);
         DirectionalShadowMapRenderPass->Execute(ActiveViewport);
     }
+
+    Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {

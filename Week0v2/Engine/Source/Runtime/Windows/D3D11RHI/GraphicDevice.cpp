@@ -4,6 +4,7 @@
 #include <filesystem>
 
 #include "Define.h"
+#include "ShadowMapConfig.h"
 
 void FGraphicsDevice::Initialize(const HWND hWindow)
 {
@@ -11,6 +12,8 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
     CreateSceneColorResources();
+
+    CreateDirectionalLightFrameBuffer();
     CreateDirectionalLightShadowMap();
 
     //CreateDepthStencilState();
@@ -104,41 +107,54 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     }
 }
 
+void FGraphicsDevice::CreateDirectionalLightFrameBuffer()
+{
+    uint32 atlasW = Shadow::CASCADE_RES * Shadow::ATLAS_COLS;
+    uint32 atlasH = Shadow::CASCADE_RES * Shadow::ATLAS_ROWS;
+    
+    D3D11_TEXTURE2D_DESC rtDesc = {};
+    rtDesc.Width              = atlasW;                           // ex) 2048
+    rtDesc.Height             = atlasH;
+    rtDesc.MipLevels          = 1;
+    rtDesc.ArraySize          = 1;
+    rtDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;        // 8비트 컬러
+    rtDesc.SampleDesc.Count   = 1;
+    rtDesc.Usage              = D3D11_USAGE_DEFAULT;
+    rtDesc.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    Device->CreateTexture2D(&rtDesc, nullptr, &DirFrameBuffer);
+    Device->CreateRenderTargetView(DirFrameBuffer, nullptr, &DirFrameBufferRTV);
+}
+
 void FGraphicsDevice::CreateDirectionalLightShadowMap()
 {
-    // 사전에 한 번만: 그림자 맵 해상도
-    static const UINT SM_SIZE = 2048;
+    uint32 atlasW = Shadow::CASCADE_RES * Shadow::ATLAS_COLS;
+    uint32 atlasH = Shadow::CASCADE_RES * Shadow::ATLAS_ROWS;
 
     // 1) ShadowMap 텍스쳐
     D3D11_TEXTURE2D_DESC texDesc = {};
-    texDesc.Width     = SM_SIZE;
-    texDesc.Height    = SM_SIZE;
+    texDesc.Width = atlasW;
+    texDesc.Height = atlasH;
     texDesc.MipLevels = 1;
-    texDesc.ArraySize = MAX_CASCADES;
-    texDesc.Format    = DXGI_FORMAT_R32_TYPELESS;
-    texDesc.SampleDesc.Count = 1;                    // ← MSAA 아님!
-    texDesc.SampleDesc.Quality = 0;
-    texDesc.Usage            = D3D11_USAGE_DEFAULT;
-    texDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-    Device->CreateTexture2D(&texDesc, nullptr, &DirShadowTexture);
+    texDesc.ArraySize = 1;
+    texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    texDesc.SampleDesc.Count = 1;                    
+    texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    Device->CreateTexture2D(&texDesc, nullptr, &DirShadowTextureAtlas);
 
     D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
     dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 뷰
-    dsvDesc.Texture2DArray.FirstArraySlice = 0;                       // ← 여기
-    dsvDesc.Texture2DArray.ArraySize = MAX_CASCADES;            // ← 여기
-    dsvDesc.Texture2DArray.MipSlice = 0;                       // ← 그리고 MipSlice
-    HRESULT hr1 = Device->CreateDepthStencilView(DirShadowTexture, &dsvDesc, &DirShadowDSV);
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Texture2D.MipSlice = 0;
+    HRESULT hr1 = Device->CreateDepthStencilView(DirShadowTextureAtlas, &dsvDesc, &DirShadowDSV);
 
     // 3) SRV
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 SRV
-    srvDesc.Texture2DArray.FirstArraySlice = 0;                        // ← 여기
-    srvDesc.Texture2DArray.ArraySize = MAX_CASCADES;             // ← 여기
-    srvDesc.Texture2DArray.MostDetailedMip = 0;                        // ← 그리고 Mip 설정
-    srvDesc.Texture2DArray.MipLevels = 1;
-    HRESULT hr2 = Device->CreateShaderResourceView(DirShadowTexture, &srvDesc, &DirShadowSRV);
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels= 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    HRESULT hr2 = Device->CreateShaderResourceView(DirShadowTextureAtlas, &srvDesc, &DirShadowSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const

@@ -2,9 +2,10 @@
 #include <DirectXMath.h>
 
 #include "MathUtility.h"
+#include "D3D11RHI/ShadowMapConfig.h"
 
 using namespace DirectX;
-FVector4 JungleMath::ConvertV3ToV4(FVector vec3)
+FVector4 JungleMath::ConvertV3ToV4(const FVector vec3)
 {
 	FVector4 newVec4;
 	newVec4.x = vec3.x;
@@ -15,7 +16,7 @@ FVector4 JungleMath::ConvertV3ToV4(FVector vec3)
 
 
 
-FMatrix JungleMath::CreateModelMatrix(FVector translation, FVector rotation, FVector scale)
+FMatrix JungleMath::CreateModelMatrix(const FVector translation, const FVector rotation, const FVector scale)
 {
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
 
@@ -26,14 +27,14 @@ FMatrix JungleMath::CreateModelMatrix(FVector translation, FVector rotation, FVe
     return Scale * Rotation * Translation;
 }
 
-FMatrix JungleMath::CreateModelMatrix(FVector translation, FQuat rotation, FVector scale)
+FMatrix JungleMath::CreateModelMatrix(const FVector translation, const FQuat rotation, const FVector scale)
 {
     FMatrix Translation = FMatrix::CreateTranslationMatrix(translation);
     FMatrix Rotation = rotation.ToMatrix();
     FMatrix Scale = FMatrix::CreateScale(scale.x, scale.y, scale.z);
     return Scale * Rotation * Translation;
 }
-FMatrix JungleMath::CreateViewMatrix(FVector eye, FVector target, FVector up)
+FMatrix JungleMath::CreateViewMatrix(const FVector eye, const FVector target, const FVector up)
 {
     FVector zAxis = (target - eye).Normalize();  // DirectX는 LH이므로 -z가 아니라 +z 사용
     FVector xAxis = (up.Cross(zAxis)).Normalize();
@@ -51,7 +52,7 @@ FMatrix JungleMath::CreateViewMatrix(FVector eye, FVector target, FVector up)
     return View;
 }
 
-FMatrix JungleMath::CreateProjectionMatrix(float fov, float aspect, float nearPlane, float farPlane)
+FMatrix JungleMath::CreateProjectionMatrix(const float fov, const float aspect, const float nearPlane, const float farPlane)
 {
     float tanHalfFOV = tan(fov / 2.0f);
     float depth = farPlane - nearPlane;
@@ -67,7 +68,7 @@ FMatrix JungleMath::CreateProjectionMatrix(float fov, float aspect, float nearPl
     return Projection;
 }
 
-FMatrix JungleMath::CreateOrthoProjectionMatrix(float width, float height, float nearPlane, float farPlane)
+FMatrix JungleMath::CreateOrthoProjectionMatrix(const float width, const float height, const float nearPlane, const float farPlane)
 {
     float r = width * 0.5f;
     float t = height * 0.5f;
@@ -83,10 +84,9 @@ FMatrix JungleMath::CreateOrthoProjectionMatrix(float width, float height, float
     return Projection;
 }
 
-void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float zNear, float zFar, TArray<FVector>& outCorners)
+void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, const float zNear, const float zFar, TArray<FVector>& outCorners)
 {
-    // inv = (proj * view)^-1
-    const FMatrix inv = FMatrix::Inverse(camProj * camView);
+    const FMatrix inv = FMatrix::Inverse(camView * camProj);
 
     // NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
     const float ndc[8][3] = {
@@ -109,7 +109,6 @@ void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camV
     }
 }
 
-
 void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
     const float InCascadeFar, FMatrix& OutLightView, FMatrix& OutLightProj)
 {
@@ -124,7 +123,7 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
 
     // 3) Light View 계산 (up은 Y축)
     const FVector eye = center - InLightDir.Normalize() * 1000.0f;
-    OutLightView = CreateViewMatrix(eye, center, FVector(0,1,0));
+    OutLightView = CreateViewMatrix(eye, center, FVector(0,0,1));
 
     // 4) Light Space에서 AABB 구하기
     FVector mins( FLT_MAX,  FLT_MAX,  FLT_MAX );
@@ -153,12 +152,69 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     OutLightProj = CreateOrthoProjectionMatrix(width, height, nearZ, farZ);
 }
 
+void JungleMath::ComputeDirLightVP(const float centerX, const float centerY, const float centerZ, const float halfWidth, const float halfHeight,
+                                   const float nearZ, const float farZ, const float lightDirX, const float lightDirY, const float lightDirZ, FMatrix& OutView, FMatrix& OutProj)
+{
+    // 1) 라이트 Forward 축(normalize)
+    float fx = lightDirX, fy = lightDirY, fz = lightDirZ;
+    const float invL = 1.0f / std::sqrt(fx*fx + fy*fy + fz*fz);
+    fx *= invL; fy *= invL; fz *= invL;
+
+    // 2) 라이트 Right 축 = normalize(Up × Forward), Up=(0,0,1)
+    //    cross((0,0,1),(fx,fy,fz)) = (-fy, fx, 0)
+    float rx = -fy, ry = fx, rz = 0.0f;
+    const float invR = 1.0f / std::sqrt(rx*rx + ry*ry + rz*rz);
+    rx *= invR; ry *= invR; rz *= invR;
+
+    // 3) 라이트 Up 축 = Forward × Right
+    //    cross((fx,fy,fz),(rx,ry,rz))
+    const float ux = fy*rz - fz*ry;
+    const float uy = fz*rx - fx*rz;
+    const float uz = fx*ry - fy*rx;
+
+    // 4) 카메라(라이트) 위치 = center - Forward * halfWidth
+    //    (halfWidth을 Frustum X 방향 AABB 반폭으로 사용)
+    const float px = centerX - fx * halfWidth;
+    const float py = centerY - fy * halfWidth;
+    const float pz = centerZ - fz * halfWidth;
+
+    // 5) View 행렬 (row‑major)
+    //    [ rx  ry  rz  fx  ]
+    //    [ ux  uy  uz  fy ]
+    //    [ -dot(R, P) -dot(U, P) -dot(F, P) fz ]
+    //    [  0   0   0       1     ]
+    OutView.M[0][0] = rx; OutView.M[0][1] = ry; OutView.M[0][2] = rz; OutView.M[0][3] = 0.0f;
+
+    OutView.M[1][0] = ux; OutView.M[1][1] = uy; OutView.M[1][2] = uz; OutView.M[1][3] = 0.0f;
+
+    OutView.M[2][0] = fx; OutView.M[2][1] = fy; OutView.M[2][2] = fz; OutView.M[2][3] = 0.0f;
+    
+    OutView.M[3][0] = -(rx*px + ry*py + rz*pz);  OutView.M[3][1] = -(ux*px + uy*py + uz*pz); OutView.M[3][2] = -(fx*px + fy*py + fz*pz); OutView.M[3][3] = 1.0f;
+
+    // 6) OrthoLH Projection (row‑major)
+    //    l = -halfWidth, r = +halfWidth → width = 2*halfWidth
+    //    b = -halfHeight, t = +halfHeight → height = 2*halfHeight
+    const float invW = 1.0f / halfWidth;        // = 2/(r-l)
+    const float invH = 1.0f / halfHeight;       // = 2/(t-b)
+    const float invD = 1.0f / (farZ - nearZ);    // = 1/(f-n)
+
+    //    [ invW   0      0       0   ]
+    //    [  0    invH    0       0   ]
+    //    [  0     0     invD     0   ]
+    //    [  0     0   -n*invD    1   ]
+    OutProj.M[0][0] = invW;   OutProj.M[0][1] = 0.0f;  OutProj.M[0][2] = 0.0f;     OutProj.M[0][3] = 0.0f;
+    OutProj.M[1][0] = 0.0f;   OutProj.M[1][1] = invH;  OutProj.M[1][2] = 0.0f;     OutProj.M[1][3] = 0.0f;
+    OutProj.M[2][0] = 0.0f;   OutProj.M[2][1] = 0.0f;  OutProj.M[2][2] = invD;     OutProj.M[2][3] = 0.0f;
+    OutProj.M[3][0] = 0.0f;   OutProj.M[3][1] = 0.0f;  OutProj.M[3][2] = -nearZ * invD; OutProj.M[3][3] = 1.0f;
+}
+
 FVector JungleMath::FVectorRotate(FVector& origin, const FVector& rotation)
 {
     FQuat quaternion = JungleMath::EulerToQuaternion(rotation);
     // 쿼터니언을 이용해 벡터 회전 적용
     return quaternion.RotateVector(origin);
 }
+
 FQuat JungleMath::EulerToQuaternion(const FVector& eulerDegrees)
 {
     float yaw = DegToRad(eulerDegrees.z);   // Z축 Yaw
@@ -219,7 +275,7 @@ FVector JungleMath::FVectorRotate(FVector& origin, const FQuat& rotation)
     return rotation.RotateVector(origin);
 }
 
-FMatrix JungleMath::CreateRotationMatrix(FVector rotation)
+FMatrix JungleMath::CreateRotationMatrix(const FVector rotation)
 {
     XMVECTOR quatX = XMQuaternionRotationAxis(XMVectorSet(1, 0, 0, 0), DegToRad(rotation.x));
     XMVECTOR quatY = XMQuaternionRotationAxis(XMVectorSet(0, 1, 0, 0), DegToRad(rotation.y));
@@ -242,12 +298,12 @@ FMatrix JungleMath::CreateRotationMatrix(FVector rotation)
 }
 
 
-float JungleMath::RadToDeg(float radian)
+float JungleMath::RadToDeg(const float radian)
 {
     return static_cast<float>(radian * (180.0f / PI));
 }
 
-float JungleMath::DegToRad(float degree)
+float JungleMath::DegToRad(const float degree)
 {
     return static_cast<float>(degree * (PI / 180.0f));
 }

@@ -10,9 +10,7 @@ StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t0);
 cbuffer FCascadeCB : register(b0)
 {
     row_major float4x4 ModelMatrix;
-    row_major float4x4 LightVP[MAX_CASCADES]; // per-cascade VP matrices
-    uint      NumCascades;
-    float3    pad;
+    row_major float4x4 LightVP; // per-cascade VP matrices
 };
 
 struct VS_INPUT
@@ -22,13 +20,14 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-    float4 worldPos  : TEXCOORD0;
+    float4 position  : SV_POSITION;
 };
 
 VS_OUTPUT mainVS(VS_INPUT input)
 {
     VS_OUTPUT output;
-    output.worldPos = mul(input.position, ModelMatrix);
+    float4 worldPos = mul(input.position, ModelMatrix);
+    output.position = mul(worldPos, LightVP);
     return output;
 }
 #endif
