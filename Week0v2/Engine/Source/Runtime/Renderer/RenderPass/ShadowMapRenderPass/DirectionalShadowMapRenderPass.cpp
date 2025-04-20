@@ -30,13 +30,11 @@ void FDirectionalShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> I
     FShadowMapRenderPass::Prepare(InViewportClient);
     FRenderer& Renderer = GEngine->renderer;
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
-    //Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
+    Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
 
-    ID3D11DepthStencilState* ds = Renderer.GetDepthStencilState(EDepthStencilState::LessEqual);
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
-    Graphics.DeviceContext->ClearRenderTargetView(Graphics.DirFrameBufferRTV, Graphics.ClearColor);
     Graphics.DeviceContext->ClearDepthStencilView(Graphics.DirShadowDSV, D3D11_CLEAR_DEPTH,1,0);
-    Graphics.DeviceContext->OMSetRenderTargets(1, &Graphics.DirFrameBufferRTV, Graphics.DirShadowDSV);
+    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.DirShadowDSV);
 }
 
 void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
@@ -54,7 +52,6 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
         View = curEditorViewportClient->GetViewMatrix();
         Proj = curEditorViewportClient->GetProjectionMatrix();
     }
-    
 
     const float camNear = curEditorViewportClient->nearPlane;
     const float camFar = curEditorViewportClient->farPlane;
@@ -84,15 +81,15 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
         FCascadeCB cascadeCB;
         FMatrix lightView, lightProj;
         JungleMath::ComputeDirLightVP(
-            Renderer.LightManager->GetDirectionalLight()->GetForwardVector(),
+            Renderer.LightManager->GetDirectionalLight()->GetOwner()->GetActorForwardVector(),
             View, Proj,
             cascadeSplits[cascade], cascadeSplits[cascade+1],
             camNear, camFar, lightView, lightProj
         );
         cascadeCB.LightVP = lightView * lightProj;
 
-        const uint32 col = cascade % Shadow::ATLAS_COLS;
-        const uint32 row = cascade / Shadow::ATLAS_COLS;
+        const uint32 col = cascade % Shadow::DIR_ATLAS_COLS;
+        const uint32 row = cascade / Shadow::DIR_ATLAS_ROWS;
         D3D11_VIEWPORT viewport =
         {
             static_cast<float>(col * Shadow::CASCADE_RES), static_cast<float>(row * Shadow::CASCADE_RES),

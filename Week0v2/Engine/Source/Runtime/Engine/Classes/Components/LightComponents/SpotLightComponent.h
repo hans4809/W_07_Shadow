@@ -5,13 +5,13 @@ struct FSpotlightComponentInfo : public FPointLightComponentInfo
 {
     DECLARE_ACTORCOMPONENT_INFO(FSpotlightComponentInfo);
 
-    float InnerConeAngle;
-    float OuterConeAngle;
+    float InnerConeRad;
+    float OuterConeRad;
 
     FSpotlightComponentInfo()
         : FPointLightComponentInfo()
-        , InnerConeAngle(0.0f)
-        , OuterConeAngle(0.768f) // radian
+        , InnerConeRad(0.0f)
+        , OuterConeRad(0.768f) // radian
     {
         InfoType = TEXT("FSpotLightComponentInfo");
         ComponentType = TEXT("USpotLightComponent");
@@ -21,20 +21,20 @@ struct FSpotlightComponentInfo : public FPointLightComponentInfo
     {
         FPointLightComponentInfo::Copy(Other);
         FSpotlightComponentInfo& SpotLightInfo = static_cast<FSpotlightComponentInfo&>(Other);
-        SpotLightInfo.InnerConeAngle = InnerConeAngle;
-        SpotLightInfo.OuterConeAngle = OuterConeAngle;
+        SpotLightInfo.InnerConeRad = InnerConeRad;
+        SpotLightInfo.OuterConeRad = OuterConeRad;
     }
 
     virtual void Serialize(FArchive& ar) const override
     {
         FPointLightComponentInfo::Serialize(ar);
-        ar << InnerConeAngle << OuterConeAngle;
+        ar << InnerConeRad << OuterConeRad;
     }
 
     virtual void Deserialize(FArchive& ar) override
     {
         FPointLightComponentInfo::Deserialize(ar);
-        ar >> InnerConeAngle >> OuterConeAngle;
+        ar >> InnerConeRad >> OuterConeRad;
     }
 };
 
@@ -45,15 +45,15 @@ class USpotLightComponent : public UPointLightComponent
 public:
     USpotLightComponent();
     USpotLightComponent(const USpotLightComponent& Other);
-    virtual ~USpotLightComponent() override = default;
+    virtual ~USpotLightComponent() override;
 
 protected:
-    float InnerConeAngle = 0.0f;
-    float OuterConeAngle = 0.768f;
+    float InnerConeRad = 0.0f;
+    float OuterConeRad = 0.768f;
 
 public:
-    float GetInnerConeAngle() const { return InnerConeAngle; }
-    float GetOuterConeAngle() const { return OuterConeAngle; }
+    float GetInnerConeRad() const { return InnerConeRad; }
+    float GetOuterConeRad() const { return OuterConeRad; }
 
     void SetInnerConeAngle(float AngleDegrees);
     void SetOuterConeAngle(float AngleDegrees);
@@ -64,4 +64,9 @@ public:
 
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
+
+    void SetAtlasIndex(const uint32 InAtlasIndex) { AtlasIndex = InAtlasIndex; }
+    uint32 GetAtlasIndex() const { return AtlasIndex; }
+private:
+    uint32 AtlasIndex = UINT_MAX;
 };

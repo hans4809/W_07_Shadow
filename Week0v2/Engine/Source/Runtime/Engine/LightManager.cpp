@@ -42,7 +42,10 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
     for (auto* Light : AllSpotLights)
     {
         if (IsSpotLightInFrustum(Light, ViewFrustum))
+        {
             VisibleSpotLights.Add(Light);
+            Light->SetAtlasIndex(VisibleSpotLights.Num() - 1);
+        }
     }
 }
 void FLightManager::UploadLightConstants()
@@ -67,8 +70,8 @@ void FLightManager::UploadLightConstants()
         Constants.SpotLights[i].Intensity = L->GetIntensity();
         Constants.SpotLights[i].Position = L->GetComponentLocation();
         Constants.SpotLights[i].Direction = L->GetOwner()->GetActorForwardVector();
-        Constants.SpotLights[i].InnerAngle = L->GetInnerConeAngle();
-        Constants.SpotLights[i].OuterAngle = L->GetOuterConeAngle();
+        Constants.SpotLights[i].InnerAngle = L->GetInnerConeRad();
+        Constants.SpotLights[i].OuterAngle = L->GetOuterConeRad();
         Constants.SpotLights[i].Radius = L->GetRadius();
         Constants.SpotLights[i].AttenuationFalloff = L->GetAttenuationFalloff();
     }
@@ -93,7 +96,7 @@ bool FLightManager::IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, con
     FVector Apex = SpotLightComp->GetComponentLocation();
     FVector Dir = SpotLightComp->GetOwner()->GetActorForwardVector().Normalize();
     float Range = SpotLightComp->GetRadius();
-    float OuterAngleRad = SpotLightComp->GetOuterConeAngle();
+    float OuterAngleRad = SpotLightComp->GetOuterConeRad();
 
     FVector BaseCenter = Apex + Dir * Range;
     float BaseRadius = Range * FMath::Tan(OuterAngleRad);
@@ -129,12 +132,12 @@ void FLightManager::VisualizeLights()
         const FMatrix Model = JungleMath::CreateModelMatrix(/*Pos*/{}, Spot->GetComponentRotation(), Spot->GetComponentScale());
         const FVector4 Color = Spot->GetLightColor();
 
-        float OuterR = tan(Spot->GetOuterConeAngle()) * Length;
-        float InnerR = tan(Spot->GetInnerConeAngle()) * Length;
+        float OuterR = tan(Spot->GetOuterConeRad()) * Length;
+        float InnerR = tan(Spot->GetInnerConeRad()) * Length;
 
-        if (Spot->GetOuterConeAngle() > 0)
+        if (Spot->GetOuterConeRad() > 0)
             Batch.AddCone(Pos, OuterR, Length, 15, Color, Model);
-        if (Spot->GetInnerConeAngle() > 0)
+        if (Spot->GetInnerConeRad() > 0)
             Batch.AddCone(Pos, InnerR, Length, 15, Color, Model);
     }
     if (DirectionalLight) {

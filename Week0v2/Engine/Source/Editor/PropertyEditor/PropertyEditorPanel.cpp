@@ -360,8 +360,8 @@ void PropertyEditorPanel::Render()
             USpotLightComponent* SpotLight = Cast<USpotLightComponent>(PickedComponent);
             if (SpotLight)
             {
-                float OuterAngle = JungleMath::RadToDeg(SpotLight->GetOuterConeAngle());
-                float InnerAngle = JungleMath::RadToDeg(SpotLight->GetInnerConeAngle());
+                float OuterAngle = JungleMath::RadToDeg(SpotLight->GetOuterConeRad());
+                float InnerAngle = JungleMath::RadToDeg(SpotLight->GetInnerConeRad());
 
                 if (ImGui::SliderFloat("Outer Angle", &OuterAngle, 0.0f, 89.9f))
                 {

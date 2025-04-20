@@ -9,19 +9,23 @@ USpotLightComponent::USpotLightComponent()
 
 USpotLightComponent::USpotLightComponent(const USpotLightComponent& Other)
     : Super(Other)
-    , InnerConeAngle(Other.InnerConeAngle)
-    , OuterConeAngle(Other.OuterConeAngle)
+    , InnerConeRad(Other.InnerConeRad)
+    , OuterConeRad(Other.OuterConeRad)
+{
+}
+
+USpotLightComponent::~USpotLightComponent()
 {
 }
 
 void USpotLightComponent::SetInnerConeAngle(float AngleDegrees)
 {
-    InnerConeAngle = JungleMath::DegToRad(AngleDegrees);
+    InnerConeRad = JungleMath::DegToRad(AngleDegrees);
 }
 
 void USpotLightComponent::SetOuterConeAngle(float AngleDegrees)
 {
-    OuterConeAngle = JungleMath::DegToRad(AngleDegrees);
+    OuterConeRad = JungleMath::DegToRad(AngleDegrees);
 }
 
 UObject* USpotLightComponent::Duplicate() const
@@ -47,8 +51,8 @@ std::shared_ptr<FActorComponentInfo> USpotLightComponent::GetActorComponentInfo(
     std::shared_ptr<FSpotlightComponentInfo> Info = std::make_shared<FSpotlightComponentInfo>();
     Super::GetActorComponentInfo()->Copy(*Info);
 
-    Info->InnerConeAngle = InnerConeAngle;
-    Info->OuterConeAngle = OuterConeAngle;
+    Info->InnerConeRad = InnerConeRad;
+    Info->OuterConeRad = OuterConeRad;
 
     return Info;
 }
@@ -58,6 +62,6 @@ void USpotLightComponent::LoadAndConstruct(const FActorComponentInfo& Info)
     Super::LoadAndConstruct(Info);
     const FSpotlightComponentInfo& SpotInfo = static_cast<const FSpotlightComponentInfo&>(Info);
 
-    InnerConeAngle = SpotInfo.InnerConeAngle;
-    OuterConeAngle = SpotInfo.OuterConeAngle;
+    InnerConeRad = SpotInfo.InnerConeRad;
+    OuterConeRad = SpotInfo.OuterConeRad;
 }

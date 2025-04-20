@@ -15,6 +15,7 @@
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/DirectionalShadowMapRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/SpotShadowMapRenderPass.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
 {
@@ -39,9 +40,16 @@ D3D_SHADER_MACRO FRenderer::EditorIconDefines[] =
     {"RENDER_ICON", "1"},
     {nullptr, nullptr}
 };
+
 D3D_SHADER_MACRO FRenderer::DirectionalDefines[] =
 {
     {"DIRECTIONAL_LIGHT", "1"},
+    {nullptr, nullptr}
+};
+
+D3D_SHADER_MACRO FRenderer::SpotDefines[] =
+{
+    {"SPOT_LIGHT", "1"},
     {nullptr, nullptr}
 };
 
@@ -101,6 +109,12 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexPixelShader(TEXT("ShadowMap"), DirectionalDefines);
     //CreateGeometryShader(TEXT("ShadowMap"), DirectionalDefines);
     DirectionalShadowMapRenderPass = std::make_shared<FDirectionalShadowMapRenderPass>(DirShadowMapName);
+
+    FString SpotShaderName = TEXT("ShadowMap");
+    SpotShaderName += SpotDefines->Name;
+    CreateVertexPixelShader(TEXT("ShadowMap"), SpotDefines);
+    SpotShadowMapRenderPass = std::make_shared<FSpotShadowMapRenderPass>(SpotShaderName);
+    
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -318,6 +332,12 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         DirectionalShadowMapRenderPass->Execute(ActiveViewport);
     }
 
+    if (LightManager->GetVisibleSpotLights().Num() > 0)
+    {
+        SpotShadowMapRenderPass->Prepare(ActiveViewport);
+        SpotShadowMapRenderPass->Execute(ActiveViewport);
+    }
+
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
@@ -368,6 +388,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 void FRenderer::ClearRenderObjects() const
 {
     DirectionalShadowMapRenderPass->ClearRenderObjects();
+    SpotShadowMapRenderPass->ClearRenderObjects();
     GoroudRenderPass->ClearRenderObjects();
     LambertRenderPass->ClearRenderObjects();
     PhongRenderPass->ClearRenderObjects();
@@ -444,6 +465,7 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
     ComputeTileLightCulling->AddRenderObjectsToRenderPass(InWorld);
 
     DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
+    SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
     {

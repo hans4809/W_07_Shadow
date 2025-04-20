@@ -27,8 +27,8 @@ protected:
      struct alignas(16) FSpotCB
     {
         FMatrix ModelMatrix;
-        uint32  NumSpotLights;
-        FVector pad;
+        uint32 SpotIndex;
+        FVector Padding;
     };
 
     struct alignas(16) FPointCB

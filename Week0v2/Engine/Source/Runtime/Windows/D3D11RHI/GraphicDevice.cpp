@@ -13,8 +13,8 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateDepthStencilBuffer(hWindow);
     CreateSceneColorResources();
 
-    CreateDirectionalLightFrameBuffer();
     CreateDirectionalLightShadowMap();
+    CreateSpotLightShadowMap();
 
     //CreateDepthStencilState();
     //CreateDepthStencilSRV();
@@ -107,29 +107,10 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
     }
 }
 
-void FGraphicsDevice::CreateDirectionalLightFrameBuffer()
-{
-    uint32 atlasW = Shadow::CASCADE_RES * Shadow::ATLAS_COLS;
-    uint32 atlasH = Shadow::CASCADE_RES * Shadow::ATLAS_ROWS;
-    
-    D3D11_TEXTURE2D_DESC rtDesc = {};
-    rtDesc.Width              = atlasW;                           // ex) 2048
-    rtDesc.Height             = atlasH;
-    rtDesc.MipLevels          = 1;
-    rtDesc.ArraySize          = 1;
-    rtDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;        // 8비트 컬러
-    rtDesc.SampleDesc.Count   = 1;
-    rtDesc.Usage              = D3D11_USAGE_DEFAULT;
-    rtDesc.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-    Device->CreateTexture2D(&rtDesc, nullptr, &DirFrameBuffer);
-    Device->CreateRenderTargetView(DirFrameBuffer, nullptr, &DirFrameBufferRTV);
-}
-
 void FGraphicsDevice::CreateDirectionalLightShadowMap()
 {
-    uint32 atlasW = Shadow::CASCADE_RES * Shadow::ATLAS_COLS;
-    uint32 atlasH = Shadow::CASCADE_RES * Shadow::ATLAS_ROWS;
+    uint32 atlasW = Shadow::CASCADE_RES * Shadow::DIR_ATLAS_COLS;
+    uint32 atlasH = Shadow::CASCADE_RES * Shadow::DIR_ATLAS_COLS;
 
     // 1) ShadowMap 텍스쳐
     D3D11_TEXTURE2D_DESC texDesc = {};
@@ -155,6 +136,37 @@ void FGraphicsDevice::CreateDirectionalLightShadowMap()
     srvDesc.Texture2D.MipLevels= 1;
     srvDesc.Texture2D.MostDetailedMip = 0;
     HRESULT hr2 = Device->CreateShaderResourceView(DirShadowTextureAtlas, &srvDesc, &DirShadowSRV);
+}
+
+void FGraphicsDevice::CreateSpotLightShadowMap()
+{
+    uint32 atlasW = Shadow::SPOT_LIGHT_RES * Shadow::SPOT_ATLAS_COLS;
+    uint32 atlasH = Shadow::SPOT_LIGHT_RES * Shadow::SPOT_ATLAS_COLS;
+
+    // 1) ShadowMap 텍스쳐
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width = atlasW;
+    texDesc.Height = atlasH;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+    texDesc.SampleDesc.Count = 1;                    
+    texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    Device->CreateTexture2D(&texDesc, nullptr, &SpotShadowTextureAtlas);
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    dsvDesc.Texture2D.MipSlice = 0;
+    HRESULT hr1 = Device->CreateDepthStencilView(SpotShadowTextureAtlas, &dsvDesc, &SpotShadowDSV);
+
+    // 3) SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels= 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    HRESULT hr2 = Device->CreateShaderResourceView(SpotShadowTextureAtlas, &srvDesc, &SpotShadowSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const

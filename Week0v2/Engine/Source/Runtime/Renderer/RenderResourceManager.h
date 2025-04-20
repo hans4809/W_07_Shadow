@@ -56,6 +56,9 @@ public:
     
     template <typename T>
     void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
+
+    template <typename T>
+    void UpdateStructuredBuffer(FName SBName, const TArray<T>& InData);
     
     ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
     ID3D11UnorderedAccessView* CreateBufferUAV(ID3D11Buffer* pBuffer, UINT numElements) const;
@@ -346,4 +349,17 @@ void FRenderResourceManager::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const
     }
 
     GraphicDevice->DeviceContext->Unmap(pBuffer, 0);
+}
+
+template <typename T>
+void FRenderResourceManager::UpdateStructuredBuffer(const FName SBName, const TArray<T>& InData)
+{
+    ID3D11Buffer* CB = GetSRVStructuredBuffer(SBName);
+    if (CB == nullptr)
+    {
+        UE_LOG(LogLevel::Error, TEXT("UpdateConstantBuffer 호출: 키 %s에 해당하는 buffer가 없습니다."), SBName);
+        return;
+    }
+    
+    UpdateStructuredBuffer(CB, InData);
 }
