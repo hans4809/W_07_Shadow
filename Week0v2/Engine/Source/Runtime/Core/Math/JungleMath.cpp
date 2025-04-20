@@ -83,16 +83,25 @@ FMatrix JungleMath::CreateOrthoProjectionMatrix(float width, float height, float
     return Projection;
 }
 
-void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float zNear, float zFar, TArray<FVector>& outCorners)
+void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float sliceNear, float sliceFar, float cameraNear, float cameraFar, TArray<FVector>& outCorners)
 {
     // inv = (proj * view)^-1
-    const FMatrix inv = FMatrix::Inverse(camProj * camView);
+    const FMatrix inv = FMatrix::Inverse(camView * camProj);
 
-    // NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
+    float ndcZ_near = 2.0f * (sliceNear - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+    float ndcZ_far = 2.0f * (sliceFar - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+
+    // 8개 코너의 z값에 각각 ndcZ_near, ndcZ_far를 사용
     const float ndc[8][3] = {
-        {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
-        {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
+        {-1,-1,ndcZ_near}, {+1,-1,ndcZ_near}, {-1,+1,ndcZ_near}, {+1,+1,ndcZ_near},
+        {-1,-1,ndcZ_far }, {+1,-1,ndcZ_far }, {-1,+1,ndcZ_far }, {+1,+1,ndcZ_far }
     };
+
+    //// NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
+    //const float ndc[8][3] = {
+    //    {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
+    //    {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
+    //};
 
     outCorners.Empty();
     outCorners.Reserve(8);
@@ -109,13 +118,12 @@ void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camV
     }
 }
 
-
 void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
-    const float InCascadeFar, FMatrix& OutLightView, FMatrix& OutLightProj)
+    const float InCascadeFar, const float InCameraNear, const float InCameraFar, FMatrix& OutLightView, FMatrix& OutLightProj)
 {
     // 1) 카메라 프러스텀 슬라이스 코너 World Space
     TArray<FVector> corners;
-    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, corners);
+    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
 
     // 2) 슬라이스 중심
     FVector center(0,0,0);
@@ -124,7 +132,7 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
 
     // 3) Light View 계산 (up은 Y축)
     const FVector eye = center - InLightDir.Normalize() * 1000.0f;
-    OutLightView = CreateViewMatrix(eye, center, FVector(0,1,0));
+    OutLightView = CreateViewMatrix(eye, center, FVector(0,0,1));
 
     // 4) Light Space에서 AABB 구하기
     FVector mins( FLT_MAX,  FLT_MAX,  FLT_MAX );

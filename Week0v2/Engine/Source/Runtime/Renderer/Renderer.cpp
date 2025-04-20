@@ -18,6 +18,8 @@
 #include "RenderPass/StaticMeshRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/DirectionalShadowMapRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/ShadowMapRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/PointShadowMapRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/SpotShadowMapRenderPass.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
 {
@@ -320,7 +322,19 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         DirectionalShadowMapRenderPass->Prepare(ActiveViewport);
         DirectionalShadowMapRenderPass->Execute(ActiveViewport);
     }
-    
+
+    if (!LightManager->GetVisiblePointLights().IsEmpty())
+    {
+        PointShadowMapRenderPass->Prepare(ActiveViewport);
+        PointShadowMapRenderPass->Execute(ActiveViewport);
+    }
+
+    if (!LightManager->GetVisibleSpotLights().IsEmpty())
+    {
+        SpotShadowMapRenderPass->Prepare(ActiveViewport);
+        SpotShadowMapRenderPass->Execute(ActiveViewport);
+    }
+
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         //TODO : FLAG로 나누기

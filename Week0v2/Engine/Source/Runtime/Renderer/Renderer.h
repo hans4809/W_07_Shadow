@@ -11,6 +11,8 @@
 #include "RenderPass/FogRenderPass.h"
 
 class FDirectionalShadowMapRenderPass;
+class FPointShadowMapRenderPass;
+class FSpotShadowMapRenderPass;
 class FLightManager;
 class FComputeTileLightCulling;
 class FEditorIconRenderPass;
@@ -106,6 +108,8 @@ private:
     std::shared_ptr<FFogRenderPass> FogRenderPass;
 
     std::shared_ptr<FDirectionalShadowMapRenderPass> DirectionalShadowMapRenderPass;
+    std::shared_ptr<FPointShadowMapRenderPass> PointShadowMapRenderPass;
+    std::shared_ptr<FSpotShadowMapRenderPass> SpotShadowMapRenderPass;
 
     ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBack;
     EViewModeIndex CurrentViewMode = VMI_Lit_Goroud;
