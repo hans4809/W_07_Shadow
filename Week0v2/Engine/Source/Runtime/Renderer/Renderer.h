@@ -59,6 +59,7 @@ public:
     static D3D_SHADER_MACRO EditorGizmoDefines[];
     static D3D_SHADER_MACRO EditorIconDefines[];
     static D3D_SHADER_MACRO DirectionalDefines[];
+    static D3D_SHADER_MACRO SpotLightDefines[];
     
     //Release
     void Release();

@@ -38,6 +38,13 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
 
     ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
     Graphics.DeviceContext->VSSetShaderResources(0, 1, &SBSRV);
+
+    ID3D11DepthStencilState* DepthStencilState =
+        Renderer.GetDepthStencilState(EDepthStencilState::LessEqual);
+    Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
+    Graphics.DeviceContext->ClearDepthStencilView(Graphics.DirShadowDSV, D3D11_CLEAR_DEPTH, 1, 0);
+    Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
+    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.DirShadowDSV);
 }
 
 void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)

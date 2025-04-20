@@ -58,7 +58,7 @@ VS_OUTPUT mainVS(VS_INPUT input)
     VS_OUTPUT output;
     float4 worldPos = mul(input.position, ModelMatrix);
     uint idx = input.LightID;
-    row_major float4x4 VP = LightViewProjectionMatrix[input.Inst];
+    row_major float4x4 VP = LightViewProjectionMatrix[idx].LightVP;
     output.position = mul(worldPos, VP);
     output.RenderTargetArrayIndex = idx;
     return output;

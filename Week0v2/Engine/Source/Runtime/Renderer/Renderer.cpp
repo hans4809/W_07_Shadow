@@ -50,6 +50,13 @@ D3D_SHADER_MACRO FRenderer::DirectionalDefines[] =
     {nullptr, nullptr}
 };
 
+D3D_SHADER_MACRO FRenderer::SpotLightDefines[] =
+{
+    {"SPOT_LIGHT", "1"},
+    {nullptr, nullptr}
+};
+
+
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -106,6 +113,12 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexPixelShader(TEXT("ShadowMap"), DirectionalDefines);
     CreateGeometryShader(TEXT("ShadowMap"), DirectionalDefines);
     DirectionalShadowMapRenderPass = std::make_shared<FDirectionalShadowMapRenderPass>(DirShadowMapName);
+
+    FString SpotShadowMapName = TEXT("ShadowMap");
+    SpotShadowMapName += SpotLightDefines->Name;
+    CreateVertexPixelShader(TEXT("ShadowMap"), SpotLightDefines);
+    SpotShadowMapRenderPass = std::make_shared<FSpotShadowMapRenderPass>(SpotShadowMapName);
+
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
