@@ -84,14 +84,17 @@ FMatrix JungleMath::CreateOrthoProjectionMatrix(const float width, const float h
     return Projection;
 }
 
-void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, const float zNear, const float zFar, TArray<FVector>& outCorners)
+void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, const float sliceNear, const float sliceFar, const float cameraNear, const float cameraFar, TArray<FVector>& outCorners)
 {
     const FMatrix inv = FMatrix::Inverse(camView * camProj);
 
-    // NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
+    float ndcZ_near = 2.0f * (sliceNear - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+    float ndcZ_far = 2.0f * (sliceFar - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+
+    // 8개 코너의 z값에 각각 ndcZ_near, ndcZ_far를 사용
     const float ndc[8][3] = {
-        {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
-        {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
+        {-1,-1,ndcZ_near}, {+1,-1,ndcZ_near}, {-1,+1,ndcZ_near}, {+1,+1,ndcZ_near},
+        {-1,-1,ndcZ_far }, {+1,-1,ndcZ_far }, {-1,+1,ndcZ_far }, {+1,+1,ndcZ_far }
     };
 
     outCorners.Empty();
@@ -110,11 +113,11 @@ void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camV
 }
 
 void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
-    const float InCascadeFar, FMatrix& OutLightView, FMatrix& OutLightProj)
+    const float InCascadeFar, const float cameraNear, const float cameraFar, FMatrix& OutLightView, FMatrix& OutLightProj)
 {
     // 1) 카메라 프러스텀 슬라이스 코너 World Space
     TArray<FVector> corners;
-    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, corners);
+    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, cameraNear, cameraFar, corners);
 
     // 2) 슬라이스 중심
     FVector center(0,0,0);

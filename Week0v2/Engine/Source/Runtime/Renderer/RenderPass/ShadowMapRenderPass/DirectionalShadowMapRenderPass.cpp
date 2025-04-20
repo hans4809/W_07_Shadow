@@ -87,7 +87,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             Renderer.LightManager->GetDirectionalLight()->GetForwardVector(),
             View, Proj,
             cascadeSplits[cascade], cascadeSplits[cascade+1],
-            lightView, lightProj
+            camNear, camFar, lightView, lightProj
         );
         cascadeCB.LightVP = lightView * lightProj;
 
