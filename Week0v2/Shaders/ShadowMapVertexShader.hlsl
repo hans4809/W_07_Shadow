@@ -44,7 +44,6 @@ cbuffer FSpotCB : register(b0)
 struct VS_INPUT
 {
     float4 position : POSITION;
-    uint   LightID  : SV_InstanceID;        // 0..NumSpotLights-1
 };
 
 struct VS_OUTPUT
@@ -53,11 +52,11 @@ struct VS_OUTPUT
     uint   RenderTargetArrayIndex : SV_RenderTargetArrayIndex;
 };
 
-VS_OUTPUT mainVS(VS_INPUT input)
+VS_OUTPUT mainVS(VS_INPUT input, uint instanceID : SV_InstanceID)
 {
     VS_OUTPUT output;
     float4 worldPos = mul(input.position, ModelMatrix);
-    uint idx = input.LightID;
+    uint idx = instanceID;
     row_major float4x4 VP = LightViewProjectionMatrix[idx].LightVP;
     output.position = mul(worldPos, VP);
     output.RenderTargetArrayIndex = idx;
@@ -75,7 +74,7 @@ cbuffer FPointCB : register(b0)
 struct VS_INPUT
 {
     float4 position : POSITION;
-    uint   LightID   : SV_InstanceID; // 0..numPointLights-1
+    //uint   LightID   : SV_InstanceID; // 0..numPointLights-1
 };
 
 struct VS_OUTPUT

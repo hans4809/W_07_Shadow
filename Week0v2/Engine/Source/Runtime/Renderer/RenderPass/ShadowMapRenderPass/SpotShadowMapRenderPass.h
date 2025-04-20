@@ -1,8 +1,11 @@
 #pragma once
 #include "ShadowMapRenderPass.h"
-
+struct FLightVP
+{
+    FMatrix LightVP;
+};
 class USpotLightComponent;
-
+class FLightManager;
 class FSpotShadowMapRenderPass : public FShadowMapRenderPass
 {
 public:
@@ -14,8 +17,12 @@ public:
     void ClearRenderObjects() override;
 private:
     void CreateShadowMapResource();
+    void UpdateLightStructuredBuffer(std::shared_ptr<FViewportClient> InViewportClient);
+    FMatrix ComputeViewProj(const USpotLightComponent* LightComp);
 private:
     const uint32 MapWidth = 512;
     const uint32 MapHeight = 512;
     const FName ShadowMap = TEXT("SpotLightShadowMap");
+
+
 };

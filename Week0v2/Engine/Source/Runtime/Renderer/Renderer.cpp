@@ -396,6 +396,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 void FRenderer::ClearRenderObjects() const
 {
     DirectionalShadowMapRenderPass->ClearRenderObjects();
+    SpotShadowMapRenderPass->ClearRenderObjects();
     GoroudRenderPass->ClearRenderObjects();
     LambertRenderPass->ClearRenderObjects();
     PhongRenderPass->ClearRenderObjects();
@@ -472,6 +473,8 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
     ComputeTileLightCulling->AddRenderObjectsToRenderPass(InWorld);
 
     DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
+
+    if (SpotShadowMapRenderPass) SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
     {
