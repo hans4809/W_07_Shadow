@@ -16,6 +16,8 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
 
     renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("SpotLightVPMat"), SB);
     renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("SpotLightVPMat"), SBSRV);
+
+    CreateShadowMapResource();
 }
 
 FSpotShadowMapRenderPass::~FSpotShadowMapRenderPass()
@@ -55,4 +57,22 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
 void FSpotShadowMapRenderPass::ClearRenderObjects()
 {
     FShadowMapRenderPass::ClearRenderObjects();
+}
+
+void FSpotShadowMapRenderPass::CreateShadowMapResource()
+{
+    FRenderer& Renderer = GEngine->renderer;
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+    
+    ID3D11Texture2D* ShadowMapTexture2DArray =
+        renderResourceManager->CreateTexture2DArray(MapWidth, MapHeight, MAX_SPOT_LIGHTS);
+    ID3D11DepthStencilView* ShadowMapDSVArray =
+        renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
+    ID3D11ShaderResourceView* ShadowMapSRVArray =
+        renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
+
+    renderResourceManager->AddOrSetSRVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetSRVShadowMapSRV(ShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetDSVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetDSVShadowMapDSV(ShadowMap, ShadowMapDSVArray);
 }

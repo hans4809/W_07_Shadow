@@ -12,4 +12,10 @@ public:
     void Execute(std::shared_ptr<FViewportClient> InViewportClient) override;
     void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     void ClearRenderObjects() override;
+private:
+    void CreateShadowMapResource();
+private:
+    const uint32 MapWidth = 512;
+    const uint32 MapHeight = 512;
+    const FName ShadowMap = TEXT("SpotLightShadowMap");
 };
