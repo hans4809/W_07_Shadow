@@ -15,6 +15,7 @@
 #include "RenderPass/LineBatchRenderPass.h"
 #include "RenderPass/StaticMeshRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/DirectionalShadowMapRenderPass.h"
+#include "RenderPass/ShadowMapRenderPass/PointShadowMapRenderPass.h"
 #include "RenderPass/ShadowMapRenderPass/SpotShadowMapRenderPass.h"
 
 D3D_SHADER_MACRO FRenderer::GouradDefines[] =
@@ -53,6 +54,12 @@ D3D_SHADER_MACRO FRenderer::SpotDefines[] =
     {nullptr, nullptr}
 };
 
+D3D_SHADER_MACRO FRenderer::PointDefines[] =
+{
+    {"POINT_LIGHT", "1"},
+    {nullptr, nullptr}
+};
+
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -63,14 +70,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     //CreateComputeShader();
     CreateComputeShader(TEXT("TileLightCulling"), nullptr);
     ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
-    
-    D3D_SHADER_MACRO defines[] = 
-    {
-        {"LIGHTING_MODEL_GOURAUD", "1"},
-        {nullptr, nullptr}
-    };
-    //SetViewMode(VMI_Lit_Phong);
-    
+
     CreateVertexPixelShader(TEXT("UberLit"), GouradDefines);
     FString GouradShaderName = TEXT("UberLit");
     GouradShaderName += GouradDefines->Name;
@@ -114,7 +114,12 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     SpotShaderName += SpotDefines->Name;
     CreateVertexPixelShader(TEXT("ShadowMap"), SpotDefines);
     SpotShadowMapRenderPass = std::make_shared<FSpotShadowMapRenderPass>(SpotShaderName);
-    
+
+    FString PointShadowMapName = TEXT("ShadowMap");
+    PointShadowMapName += PointDefines->Name;
+    CreateVertexPixelShader(TEXT("ShadowMap"), PointDefines);
+    CreateGeometryShader(TEXT("ShadowMap"), PointDefines);
+    PointShadowMapRenderPass = std::make_shared<FPointShadowMapRenderPass>(PointShadowMapName);
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -242,7 +247,8 @@ void FRenderer::CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* p
     
     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
 
-    CreateMappedCB(ShaderStageToCB, ComputeConstantInfos, EShaderStage::CS);  
+    CreateMappedCB(ShaderStageToCB, ComputeConstantInfos, EShaderStage::CS);
+    MappingCS(Prefix, ComputeShaderName);
 }
 
 void FRenderer::CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines)
@@ -338,6 +344,12 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         SpotShadowMapRenderPass->Execute(ActiveViewport);
     }
 
+    if (LightManager->GetVisiblePointLights().Num() > 0)
+    {
+        PointShadowMapRenderPass->Prepare(ActiveViewport);
+        PointShadowMapRenderPass->Execute(ActiveViewport);
+    }
+
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
@@ -389,6 +401,7 @@ void FRenderer::ClearRenderObjects() const
 {
     DirectionalShadowMapRenderPass->ClearRenderObjects();
     SpotShadowMapRenderPass->ClearRenderObjects();
+    PointShadowMapRenderPass->ClearRenderObjects();
     GoroudRenderPass->ClearRenderObjects();
     LambertRenderPass->ClearRenderObjects();
     PhongRenderPass->ClearRenderObjects();
@@ -466,6 +479,7 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
 
     DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
     SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
+    PointShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
     {

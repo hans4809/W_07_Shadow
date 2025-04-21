@@ -1,9 +1,4 @@
-struct FLightVP
-{
-    row_major float4x4 LightVP;
-};
 
-StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t0);
 #if DIRECTIONAL_LIGHT
 #define MAX_CASCADES 4
 
@@ -33,6 +28,13 @@ VS_OUTPUT mainVS(VS_INPUT input)
 #endif
 
 #if SPOT_LIGHT
+struct FSpotLightVP
+{
+    row_major float4x4 LightVP;
+};
+
+StructuredBuffer<FSpotLightVP> SpotVP : register(t0);
+
 cbuffer FSpotCB : register(b0)
 {
     row_major float4x4  ModelMatrix;
@@ -54,17 +56,24 @@ VS_OUTPUT mainVS(VS_INPUT input)
 {
     VS_OUTPUT output;
     float4 worldPos = mul(input.position, ModelMatrix);
-    row_major float4x4 VP = LightViewProjectionMatrix[SpotIndex].LightVP;
+    row_major float4x4 VP = SpotVP[SpotIndex].LightVP;
     output.position = mul(worldPos, VP);
     return output;
 }
 #endif
 
 #if POINT_LIGHT
+struct FPointLightVP
+{
+    row_major float4x4 LightVP[6];
+};
+
+StructuredBuffer<FPointLightVP> PointVP : register(t0);
+
 cbuffer FPointCB : register(b0)
 {
     row_major float4x4 ModelMatrix;
-    uint     NumPoints;
+    uint     PointIndex;
 }
 
 struct VS_INPUT
@@ -83,6 +92,7 @@ VS_OUTPUT mainVS(VS_INPUT input)
 {
     VS_OUTPUT output;
     output.worldPos = mul(float4(input.position), ModelMatrix).xyz;
+    row_major float4x4 VPs[6] = PointVP[PointIndex].LightVP;
     output.LightID = input.LightID;
     return output;
 }

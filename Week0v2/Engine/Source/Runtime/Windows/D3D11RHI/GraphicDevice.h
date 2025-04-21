@@ -45,14 +45,22 @@ public:
     ID3D11DepthStencilView* DepthStencilView = nullptr;  // 깊이/스텐실 뷰
     ID3D11Texture2D* DepthCopyTexture;
     ID3D11ShaderResourceView* DepthCopySRV;
-    
+
+
+    //TODO : 나중에 따로 빼는 거 생각
     ID3D11Texture2D* DirShadowTextureAtlas = nullptr;
     ID3D11ShaderResourceView* DirShadowSRV = nullptr;
     ID3D11DepthStencilView* DirShadowDSV = nullptr;
 
+    //TODO : 나중에 따로 빼는 거 생각
     ID3D11Texture2D* SpotShadowTextureAtlas = nullptr;
     ID3D11ShaderResourceView* SpotShadowSRV = nullptr;
     ID3D11DepthStencilView* SpotShadowDSV = nullptr;
+
+    //TODO : 나중에 따로 빼는 거 생각
+    ID3D11Texture2D* PointShadowTextureAtlas = nullptr;
+    ID3D11ShaderResourceView* PointShadowSRV = nullptr;
+    ID3D11DepthStencilView* PointShadowDSV = nullptr;
     
     //Fog 처리용 변수
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
@@ -64,9 +72,13 @@ public:
     void Initialize(HWND hWindow);
     void CreateDeviceAndSwapChain(HWND hWindow);
     void CreateDepthStencilBuffer(HWND hWindow);
-    
+
+    //TODO : 나중에 따로 빼는 거 생각
     void CreateDirectionalLightShadowMap();
+    //TODO : 나중에 따로 빼는 거 생각
     void CreateSpotLightShadowMap();
+    //TODO : 나중에 따로 빼는 거 생각
+    void CreatePointLightShadowMap();
     
     bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const;
     bool CreateRasterizerState(const D3D11_RASTERIZER_DESC* pRasterizerDesc, ID3D11RasterizerState** ppRasterizerState) const;

@@ -34,7 +34,7 @@ protected:
     struct alignas(16) FPointCB
     {
         FMatrix ModelMatrix;
-        uint32  NumPoints;
+        uint32  PointIndex;
     };
 
     TArray<UStaticMeshComponent*> StaticMeshComponents;

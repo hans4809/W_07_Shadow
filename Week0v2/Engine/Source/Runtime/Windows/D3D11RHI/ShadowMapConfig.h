@@ -17,6 +17,14 @@ namespace Shadow
     static constexpr uint32 SPOT_ATLAS_COLS = 4;
     static constexpr uint32 SPOT_ATLAS_ROWS = 4;
 
-    inline uint32 SpotAtlasWidth = SPOT_ATLAS_COLS * SPOT_ATLAS_ROWS;
-    inline uint32 SpotAtlasHeight = SPOT_ATLAS_ROWS * SPOT_ATLAS_COLS;
+    constexpr uint32 SpotAtlasWidth = SPOT_ATLAS_COLS * SPOT_LIGHT_RES;
+    constexpr uint32 SpotAtlasHeight = SPOT_ATLAS_ROWS * SPOT_LIGHT_RES;
+
+    static constexpr uint32 MAX_POINT_LIGHT_COUNT = 6;
+    static constexpr uint32 POINT_LIGHT_RES = 1024;
+    static constexpr uint32 POINT_ATLAS_COLS = 6;
+    static constexpr uint32 POINT_ATLAS_ROWS = 6;
+
+    constexpr uint32 PointAtlasWidth = POINT_ATLAS_COLS * POINT_LIGHT_RES;
+    constexpr uint32 PointAtlasHeight = POINT_ATLAS_ROWS * POINT_LIGHT_RES;
 }

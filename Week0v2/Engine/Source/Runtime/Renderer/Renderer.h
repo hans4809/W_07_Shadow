@@ -10,6 +10,7 @@
 #include "RenderPass/DebugDepthRenderPass.h"
 #include "RenderPass/FogRenderPass.h"
 
+class FPointShadowMapRenderPass;
 class FSpotShadowMapRenderPass;
 class FDirectionalShadowMapRenderPass;
 class FLightManager;
@@ -59,6 +60,7 @@ public:
     static D3D_SHADER_MACRO EditorIconDefines[];
     static D3D_SHADER_MACRO DirectionalDefines[];
     static D3D_SHADER_MACRO SpotDefines[];
+    static D3D_SHADER_MACRO PointDefines[];
     
     //Release
     void Release();
@@ -109,6 +111,7 @@ private:
 
     std::shared_ptr<FDirectionalShadowMapRenderPass> DirectionalShadowMapRenderPass;
     std::shared_ptr<FSpotShadowMapRenderPass> SpotShadowMapRenderPass;
+    std::shared_ptr<FPointShadowMapRenderPass> PointShadowMapRenderPass;
 
     ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBack;
     EViewModeIndex CurrentViewMode = VMI_Lit_Goroud;

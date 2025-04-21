@@ -8,6 +8,7 @@
 #define KINDA_SMALL_NUMBER   (1.e-4f)
 
 #define PI_DOUBLE            (3.141592653589793238462643383279502884197169399)
+#define PIDIV2               (1.570796327f)
 
 
 struct FMath

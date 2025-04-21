@@ -12,4 +12,9 @@ public:
     void Execute(std::shared_ptr<FViewportClient> InViewportClient) override;
     void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     void ClearRenderObjects() override;
+private:
+    struct FPointLightVP
+    {
+        FMatrix VP[6];
+    };
 };

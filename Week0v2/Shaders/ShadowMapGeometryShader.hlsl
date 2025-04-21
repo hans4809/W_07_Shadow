@@ -1,10 +1,3 @@
-struct FLightVP
-{
-    row_major float4x4 LightVP;
-};
-
-StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t0);
-
 #if DIRECTIONAL_LIGHT
 #define MAX_CASCADES 4
 struct VS_OUTPUT
@@ -47,6 +40,14 @@ void mainGS(triangle VS_OUTPUT triIn[3], inout TriangleStream<GS_OUTPUT> stream)
 #endif
 
 #if POINT_LIGHT
+
+struct FPointLightVP
+{
+    row_major float4x4 LightVP[6];
+};
+
+StructuredBuffer<FPointLightVP> PointVP : register(t0);
+
 struct GS_INPUT
 {
     float3 worldPos : TEXCOORD0;
@@ -56,24 +57,26 @@ struct GS_INPUT
 struct GS_OUTPUT
 {
     float4 Position                : SV_POSITION;
-    uint   RenderTargetArrayIndex  : SV_RenderTargetArrayIndex;
+    uint   RenderTargetArrayIndex  : SV_ViewportArrayIndex;
 };
 
 [maxvertexcount(18)]
 void mainGS(triangle GS_INPUT input[3], inout TriangleStream<GS_OUTPUT> triStream)
 {
     uint lightIdx = input[0].LightID;
+    
+    // 6면 반복
+    [unroll]
     for (uint face = 0; face < 6; ++face)
     {
-        uint slice = lightIdx * 6 + face;
-        float4x4 VP = LightViewProjectionMatrix[slice].LightVP;
+        float4x4 VP = PointVP[lightIdx].LightVP[face];
         
         for (int v = 0; v < 3; ++v)
         {
-            GS_OUTPUT outV;
-            outV.Position               = mul(float4(input[v].worldPos, 1), VP);
-            outV.RenderTargetArrayIndex = slice;
-            triStream.Append(outV);
+            GS_OUTPUT output;
+            output.Position               = mul(float4(input[v].worldPos, 1), VP);
+            output.RenderTargetArrayIndex = face;
+            triStream.Append(output);
         }
         triStream.RestartStrip();
     }
