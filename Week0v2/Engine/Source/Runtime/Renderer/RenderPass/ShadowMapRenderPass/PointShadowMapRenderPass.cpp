@@ -96,12 +96,14 @@ void FPointShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewp
     
     for (uint32 visibleLightIndex = 0; visibleLightIndex < lightManager->GetVisiblePointLights().Num(); ++visibleLightIndex)
     {
-        D3D11_VIEWPORT vp[6];
+        D3D11_VIEWPORT vp[6] = {};
         for (uint32 face = 0; face < 6; ++face)
         {
-            const uint32 col = face % Shadow::POINT_ATLAS_COLS;  // 0,1,2
-            const uint32 row = face / Shadow::POINT_ATLAS_COLS;  // 0 or 1
-            vp[face] = {
+            const uint32 row = visibleLightIndex % Shadow::POINT_ATLAS_ROWS;
+            const uint32 col = face % Shadow::POINT_ATLAS_COLS;
+
+            vp[face] = 
+            {
                 static_cast<float>(col * Shadow::POINT_LIGHT_RES),
                 static_cast<float>(row * Shadow::POINT_LIGHT_RES),
                 static_cast<float>(Shadow::POINT_LIGHT_RES),

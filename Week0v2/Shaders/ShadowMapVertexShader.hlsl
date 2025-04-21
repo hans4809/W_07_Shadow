@@ -93,7 +93,7 @@ VS_OUTPUT mainVS(VS_INPUT input)
     VS_OUTPUT output;
     output.worldPos = mul(float4(input.position), ModelMatrix).xyz;
     row_major float4x4 VPs[6] = PointVP[PointIndex].LightVP;
-    output.LightID = input.LightID;
+    output.LightID = PointIndex;
     return output;
 }
 #endif
