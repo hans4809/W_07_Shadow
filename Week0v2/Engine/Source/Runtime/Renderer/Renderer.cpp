@@ -327,7 +327,12 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     {
         FogRenderPass->PrePrepare(); //fog 렌더 여부 결정 및 준비
     }
-    
+    LightManager->CollectLights(World);
+    FMatrix View = ActiveViewport->GetViewMatrix();
+    FMatrix Proj = ActiveViewport->GetProjectionMatrix();
+    FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
+    LightManager->CullLights(Frustum);
+
     ComputeTileLightCulling->Dispatch(ActiveViewport);
 
     if (LightManager->GetDirectionalLight() != nullptr)

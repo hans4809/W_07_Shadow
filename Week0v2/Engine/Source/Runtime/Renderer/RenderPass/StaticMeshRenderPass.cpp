@@ -71,6 +71,10 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     {
         Renderer.LightManager->UploadLightConstants();
     }
+        Renderer.LightManager->CullLights(Frustum);
+        */
+        Renderer.LightManager->UploadLightConstants();
+    }
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
     Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 정정 연결 방식 설정
     Graphics.DeviceContext->RSSetState(Renderer.GetCurrentRasterizerState());
@@ -308,21 +312,6 @@ void FStaticMeshRenderPass::UpdateFlagConstant()
             continue;
         }
         
-        if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp))
-        {
-            LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
-            LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
-            LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
-            LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
-            LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
-            LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
-            LightConstant.SpotLights[SpotLightCount].Radius = SpotLightComp->GetRadius();
-            LightConstant.SpotLights[SpotLightCount].AttenuationFalloff = SpotLightComp->GetAttenuationFalloff();
-
-            SpotLightCount++;
-            continue;
-        }
-        
 
         if (UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp))
         {
@@ -331,7 +320,6 @@ void FStaticMeshRenderPass::UpdateFlagConstant()
             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetComponentLocation();
             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
-
             PointLightCount++;
             continue;
         }
