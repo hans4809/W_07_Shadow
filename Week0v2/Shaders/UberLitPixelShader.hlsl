@@ -6,6 +6,7 @@ Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
 
 StructuredBuffer<FLightVP> SpotVP : register(t3);
+StructuredBuffer<FLightVP> PointVP : register(t5);
 
 struct PS_INPUT
 {
@@ -22,6 +23,60 @@ struct PS_OUTPUT
     float4 color : SV_Target0;
     float4 UUID : SV_Target1;
 };
+
+
+// dir 벡터를 기반으로 사용해야 할 큐브맵 face 인덱스와 
+// 해당 face 내에서의 UV 좌표를 계산하는 함수
+uint ComputeCubeface(float3 dir)
+{
+    // 방향 벡터 각 성분의 절댓값 계산 (주축 판별용)
+    float adx = abs(dir.x);
+    float ady = abs(dir.y);
+    float adz = abs(dir.z);
+    
+    // X축이 가장 크게 기여하는 경우
+    if (adx >= ady && adx >= adz)
+    {
+        if (dir.x > 0)
+        {
+            // +X 면 (face 0)
+            return 0;
+        }
+        else
+        {
+            // -X 면 (face 1)
+            return 1;
+        }
+    }
+    // Y축이 가장 크게 기여하는 경우
+    else if (ady >= adx && ady >= adz)
+    {
+        if (dir.y > 0)
+        {
+            // +Y 면 (face 2)
+            return 2;
+        }
+        else
+        {
+            // -Y 면 (face 3)
+            return 3;
+        }
+    }
+    // Z축이 가장 크게 기여하는 경우
+    else
+    {
+        if (dir.z > 0)
+        {
+            // +Z 면 (face 4)
+            return 4;
+        }
+        else
+        {
+            // -Z 면 (face 5)
+            return 5;
+        }
+    }
+}
 
 // 타일 크기 설정
 /*static const uint TILE_SIZE_X = 16;
@@ -106,7 +161,14 @@ PS_OUTPUT mainPS(PS_INPUT input)
             break;
         }
 
-        float shadow = SamplePointShadow(PointLights[lightIndex], input.worldPos, Normal, lightIndex);
+        float L = input.worldPos - PointLights[lightIndex].Position;
+        float dist = length(L);
+        float dir = L/dist;
+
+        uint face = ComputeCubeface(dir);
+        uint pointVPIndex = lightIndex * 6 + face;
+
+        float shadow = SamplePointShadow(PointVP[pointVPIndex], PointLights[lightIndex], input.worldPos, lightIndex);
         float3 light = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
         TotalLight += shadow * light;
     }

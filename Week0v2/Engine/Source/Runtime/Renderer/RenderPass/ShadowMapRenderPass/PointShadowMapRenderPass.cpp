@@ -154,8 +154,10 @@ TArray<FMatrix> FPointShadowMapRenderPass::GetLightViewProjectionMatrix(const UP
         static const FVector FowardVector[6] = {
             {1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}
         };
-        static const FVector UpVector[6] = {
-            {0,1,0},{0,1,0},{0,0,-1},{0,0,1},{0,1,0},{0,1,0}
+        const FVector UpVector[6] = {
+            FVector(0, 1, 0), FVector(0,1,0),
+            FVector(0,0,-1), FVector(0,0,1),
+            FVector(0,1,0), FVector(0,1,0)
         };
         const FVector TargetPos = Position +  FowardVector[face];
         FMatrix view = JungleMath::CreateViewMatrix(Position, TargetPos, UpVector[face]);

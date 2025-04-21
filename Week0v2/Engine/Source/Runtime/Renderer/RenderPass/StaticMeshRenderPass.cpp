@@ -96,14 +96,17 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
 
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
     
-    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
-    Graphics.DeviceContext->PSSetShaderResources(3, 1, &SBSRV);
+    ID3D11ShaderResourceView* SpotSBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
+    Graphics.DeviceContext->PSSetShaderResources(3, 1, &SpotSBSRV);
 
     ID3D11ShaderResourceView* SpotShadowMap = renderResourceManager->GetShadowMapSRV(SpotLightShadowMap);
     Graphics.DeviceContext->PSSetShaderResources(4, 1, &SpotShadowMap);
 
+    ID3D11ShaderResourceView* PointSBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("PointLightVPMat"));
+    Graphics.DeviceContext->PSSetShaderResources(5, 1, &PointSBSRV);
+
     ID3D11ShaderResourceView* PointShadowMap = renderResourceManager->GetShadowMapSRV(PointLightShadowMap);
-    Graphics.DeviceContext->PSSetShaderResources(5, 1, &PointShadowMap);
+    Graphics.DeviceContext->PSSetShaderResources(6, 1, &PointShadowMap);
 
     Graphics.DeviceContext->PSSetSamplers(4, 1, &shadowSampler);
 }

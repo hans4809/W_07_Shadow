@@ -172,13 +172,13 @@ float3 CalculateSpotLight(
 }
 
 Texture2DArray<float> SpotShadowMap : register(t4);
-TextureCubeArray<float> PointShadowMap : register(t5);
+TextureCubeArray<float> PointShadowMap : register(t6);
 SamplerComparisonState ShadowSampler : register(s4); // Shadow sampler
 
-float3 CalculateShadowSpotLight(FLightVP light, float3 VertexWorldPos, uint index)
+float3 CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
 {
     //float4 lightSpace = mul(light.LightVP, float4(worldPos, 1.0));
-    float4 lightSpace = mul(float4(VertexWorldPos, 1.0), light.LightVP);
+    float4 lightSpace = mul(float4(PixelWorldPos, 1.0), light.LightVP);
     lightSpace.xyz /= lightSpace.w;
 
     float2 uv =
@@ -195,26 +195,18 @@ float3 CalculateShadowSpotLight(FLightVP light, float3 VertexWorldPos, uint inde
     return SpotShadowMap.SampleCmpLevelZero(ShadowSampler, float3(uv, index), z);
 }
 
-float SamplePointShadow(FPointLight light, float3 VertexWorldPos, float3 normal, uint index)
+float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos, uint index)
 {
-    // 1) 라이트 방향과 거리
-    float3 L = VertexWorldPos - light.Position;
-    float dist = length(L);
-    
-    if (dist >= light.Radius) // 범위 밖이면 그림자 없음
-    {
-        return 1.0;
-    }
+    float3 lightPos = Light.Position;
+    float3 LightToWorld = PixelWorldPos - lightPos;
 
-    float3 dir = L / dist; // 방향 단위벡터
-    // (2) 정규화된 깊이값 (0…1)
-    float zNorm = dist / light.Radius;
+    float4 lightSpace = mul(float4(PixelWorldPos, 1.0), light.LightVP);
+    lightSpace.xyz /= lightSpace.w;
+    float z = lightSpace.z;
 
-    // 1) dir.xyz + index → float4 로 묶어서 넘김
-    float4 coord = float4(dir.x, dir.y, dir.z, index);
-    
-    // (3) 큐브맵 배열에서 이 라이트 인덱스의 큐브 하나만 꺼내서 SampleCmp
-    return PointShadowMap.SampleCmp(ShadowSampler, coord, zNorm);
+    float3 dir = normalize(LightToWorld);
+
+    return PointShadowMap.SampleCmp(ShadowSampler, float4(dir, index), z);
 }
 
 cbuffer FMaterialConstants : register(b0)
