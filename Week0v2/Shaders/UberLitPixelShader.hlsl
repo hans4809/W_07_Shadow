@@ -5,6 +5,10 @@ Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
 
+
+
+StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t3);
+
 struct PS_INPUT
 {
     float4 position : SV_POSITION; // 변환된 화면 좌표
@@ -107,7 +111,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)
-        TotalLight += CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+    {
+        float shadow = CalculateShadowSpotLight(LightViewProjectionMatrix[k], input.worldPos,k);
+        float3 light = CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+        TotalLight += shadow * light;
+    }
     
     // 최종 색상 
     output.color = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);

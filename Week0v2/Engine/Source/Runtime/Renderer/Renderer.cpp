@@ -33,7 +33,7 @@ D3D_SHADER_MACRO FRenderer::LambertDefines[] =
     {nullptr, nullptr}
 };
 
-D3D_SHADER_MACRO FRenderer::EditorGizmoDefines[] = 
+D3D_SHADER_MACRO FRenderer::EditorGizmoDefines[] =
 {
     {"RENDER_GIZMO", "1"},
     {nullptr, nullptr}

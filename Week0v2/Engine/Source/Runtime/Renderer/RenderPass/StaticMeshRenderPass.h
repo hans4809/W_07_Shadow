@@ -15,9 +15,7 @@ class UStaticMeshComponent;
 class FStaticMeshRenderPass : public FBaseRenderPass
 {
 public:
-    explicit FStaticMeshRenderPass(const FName& InShaderName)
-        : FBaseRenderPass(InShaderName)
-    {}
+    explicit FStaticMeshRenderPass(const FName& InShaderName);
 
     virtual ~FStaticMeshRenderPass() {}
     void AddRenderObjectsToRenderPass(UWorld* InWorld) override;
@@ -42,4 +40,7 @@ private:
 private:        
     //TArray<ULightComponentBase*> LightComponents;
     TArray<UStaticMeshComponent*> StaticMesheComponents;
+
+    ID3D11SamplerState* shadowSampler = nullptr;
+    const FName ShadowMap = TEXT("SpotLightShadowMap");
 };
