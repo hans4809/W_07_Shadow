@@ -119,8 +119,6 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
             // SubSet마다 Material Update 및 Draw
             for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); ++subMeshIndex)
             {
-                const int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
-            
                 // index draw
                 const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
                 const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
