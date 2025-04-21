@@ -25,4 +25,7 @@ private:
     const FName ShadowMap = TEXT("SpotLightShadowMap");
     const FName SpotLightVPMat = TEXT("SpotLightVPMat");
 
+
+    ID3D11RasterizerState* rasterizerState = nullptr;
+
 };

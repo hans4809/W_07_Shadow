@@ -23,6 +23,19 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
     renderResourceManager->AddOrSetSRVStructuredBufferSRV(SpotLightVPMat, SBSRV);
 
     CreateShadowMapResource();
+
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.DepthClipEnable = true;
+
+    // Depth Bias 설정
+    rasterDesc.DepthBias = 1;            // 정수 값
+    rasterDesc.SlopeScaledDepthBias = 1.0f;       // 기울기 기반 Bias
+    rasterDesc.DepthBiasClamp = 0.0f;             // Bias 최대값 제한 (보통 0.0f)
+
+    // Rasterizer State 생성
+    HRESULT hr = Graphics.Device->CreateRasterizerState(&rasterDesc, &rasterizerState);
 }
 
 FSpotShadowMapRenderPass::~FSpotShadowMapRenderPass()
@@ -66,6 +79,8 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
         renderResourceManager->GetShadowMapDSV(ShadowMap);
     Graphics.DeviceContext->ClearDepthStencilView(ShadowMapDSVArray, D3D11_CLEAR_DEPTH, 1, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowMapDSVArray);
+
+    Graphics.DeviceContext->RSSetState(rasterizerState);
 }
 
 void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
