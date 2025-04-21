@@ -74,7 +74,7 @@ cbuffer FPointCB : register(b0)
 struct VS_INPUT
 {
     float4 position : POSITION;
-    //uint   LightID   : SV_InstanceID; // 0..numPointLights-1
+    uint   LightID   : SV_InstanceID; // 0..numPointLights-1
 };
 
 struct VS_OUTPUT

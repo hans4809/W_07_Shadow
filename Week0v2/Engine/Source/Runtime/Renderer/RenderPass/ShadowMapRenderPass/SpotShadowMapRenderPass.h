@@ -1,9 +1,6 @@
 #pragma once
 #include "ShadowMapRenderPass.h"
-struct FLightVP
-{
-    FMatrix LightVP;
-};
+
 class USpotLightComponent;
 class FLightManager;
 class FSpotShadowMapRenderPass : public FShadowMapRenderPass
@@ -23,6 +20,4 @@ private:
     const uint32 MapWidth = 512;
     const uint32 MapHeight = 512;
     const FName ShadowMap = TEXT("SpotLightShadowMap");
-
-
 };
