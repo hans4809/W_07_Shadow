@@ -41,6 +41,8 @@ private:
     //TArray<ULightComponentBase*> LightComponents;
     TArray<UStaticMeshComponent*> StaticMesheComponents;
 
+    //TODO Sampler ResourceManager로 옮기기.
     ID3D11SamplerState* shadowSampler = nullptr;
     const FName ShadowMap = TEXT("SpotLightShadowMap");
+    const FName SpotLightVPMat = TEXT("SpotLightVPMat");
 };

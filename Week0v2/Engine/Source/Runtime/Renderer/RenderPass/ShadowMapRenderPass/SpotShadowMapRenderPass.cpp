@@ -19,8 +19,8 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
     SB = renderResourceManager->CreateStructuredBuffer<FMatrix>(MAX_SPOT_LIGHTS);
     SBSRV = renderResourceManager->CreateBufferSRV(SB, MAX_SPOT_LIGHTS);
 
-    renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("SpotLightVPMat"), SB);
-    renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("SpotLightVPMat"), SBSRV);
+    renderResourceManager->AddOrSetSRVStructuredBuffer(SpotLightVPMat, SB);
+    renderResourceManager->AddOrSetSRVStructuredBufferSRV(SpotLightVPMat, SBSRV);
 
     CreateShadowMapResource();
 }
@@ -77,7 +77,7 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
 
     FLightManager* LightManager = Renderer.LightManager;
     uint32 NumSpotLights = LightManager->GetVisibleSpotLights().Num();
-    UpdateLightStructuredBuffer(InViewportClient);
+    UpdateLightStructuredBuffer();
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)
     {
         const FMatrix Model = JungleMath::CreateModelMatrix(staticMeshComp->GetComponentLocation(), staticMeshComp->GetComponentRotation(),
@@ -141,7 +141,7 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
     renderResourceManager->AddOrSetDSVShadowMapDSV(ShadowMap, ShadowMapDSVArray);
 }
 
-void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer(std::shared_ptr<FViewportClient> InViewportClient)
+void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
 {
     FRenderer& Renderer = GEngine->renderer;
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
@@ -153,14 +153,11 @@ void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer(std::shared_ptr<FView
 
     TArray<FLightVP> SpotLightViewProjMatrices;
 
-    std::shared_ptr<FEditorViewportClient> curEditorViewportClient = 
-        std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     for (USpotLightComponent* LightComp : VisibleSpotLights)
     {
         if (!LightComp) continue;
 
         FLightVP GPULight;
-        //GPULight.LightVP = curEditorViewportClient->GetViewMatrix()* curEditorViewportClient->GetProjectionMatrix();
         GPULight.LightVP = ComputeViewProj(LightComp);
 
         SpotLightViewProjMatrices.Add(GPULight);
@@ -187,12 +184,10 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* Lig
     const FMatrix ViewMatrix =
         JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
 
-    const float OuterConeAngleRad = FMath::DegreesToRadians(LightComp->GetOuterConeAngle());
     const float OuterConeAngle = LightComp->GetOuterConeAngle();
     const float AspectRatio = 1.0f;
     const float NearZ = 1.0f;
     const float FarZ = LightComp->GetRadius();
-    //const float FarZ = 1000;
 
     const FMatrix ProjectionMatrix =
         JungleMath::CreateProjectionMatrix(OuterConeAngle*2, AspectRatio, NearZ, FarZ);
