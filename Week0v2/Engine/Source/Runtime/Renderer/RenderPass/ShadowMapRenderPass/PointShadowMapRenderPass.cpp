@@ -86,7 +86,7 @@ void FPointShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewp
     ID3D11DepthStencilState* DepthStencilState = Renderer.GetDepthStencilState(EDepthStencilState::LessEqual);
     Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     
-    ID3D11DepthStencilView* ShadowMapDSVArray = renderResourceManager->GetShadowMapDSV(ShadowMap);
+    ID3D11DepthStencilView* ShadowMapDSVArray = renderResourceManager->GetShadowMapDSV(PointLightShadowMap);
     Graphics.DeviceContext->ClearDepthStencilView(ShadowMapDSVArray, D3D11_CLEAR_DEPTH, 1, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowMapDSVArray);
 }
@@ -172,12 +172,12 @@ void FPointShadowMapRenderPass::CreateShadowMapResource() const
     const FRenderer& Renderer = GEngine->renderer;
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
     
-    ID3D11Texture2D* ShadowMapTexture2DArray = renderResourceManager->CreateTexture2DArray(MapWidth, MapHeight, MAX_POINT_LIGHTS * 6);
-    ID3D11DepthStencilView* ShadowMapDSVArray = renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_POINT_LIGHTS * 6);
-    ID3D11ShaderResourceView* ShadowMapSRVArray = renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_POINT_LIGHTS * 6) ;
+    ID3D11Texture2D* ShadowMapTextureCube2DArray = renderResourceManager->CreateTextureCube2DArray(MapWidth, MapHeight, MAX_POINT_LIGHTS);
+    ID3D11DepthStencilView* ShadowMapDSVArray = renderResourceManager->CreateTextureCube2DArrayDSV(ShadowMapTextureCube2DArray, MAX_POINT_LIGHTS);
+    ID3D11ShaderResourceView* ShadowMapSRVArray = renderResourceManager->CreateTextureCube2DArraySRV(ShadowMapTextureCube2DArray, MAX_POINT_LIGHTS) ;
 
-    renderResourceManager->AddOrSetSRVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetSRVShadowMapSRV(ShadowMap, ShadowMapSRVArray);
-    renderResourceManager->AddOrSetDSVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetDSVShadowMapDSV(ShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapTexutre(PointLightShadowMap, ShadowMapTextureCube2DArray);
+    renderResourceManager->AddOrSetSRVShadowMapSRV(PointLightShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetDSVShadowMapTexutre(PointLightShadowMap, ShadowMapTextureCube2DArray);
+    renderResourceManager->AddOrSetDSVShadowMapDSV(PointLightShadowMap, ShadowMapDSVArray);
 }

@@ -1,10 +1,11 @@
-#pragma once
+#ifndef UBERLITCOMMON_HLSLI
+#define UBERLITCOMMON_HLSLI
 
 // ---------------------------------------------
 // 조명 구조체 정의
 // ---------------------------------------------
 // 최대 라이트 수 정의 (컴파일 타임 상수)
-#define NUM_POINT_LIGHT 16
+#define NUM_POINT_LIGHT 8
 #define NUM_SPOT_LIGHT 16
 //tile 기반 최대치
 #define MAX_POINTLIGHT_COUNT 16
@@ -170,62 +171,14 @@ float3 CalculateSpotLight(
 #endif
 }
 
-/*float3 CalculateSpotLight(
-    FSpotLight Light,
-    float3 WorldPos,
-    float3 Normal,
-    float3 ViewDir,
-    float3 Albedo,
-    float SpecularScalar,
-    float3 SpecularColor)
-{
-    float3 LightDir = normalize(Light.Position - WorldPos);
-    float Distance = length(Light.Position - WorldPos);
-    float3 SpotDirection = normalize(-Light.Direction);
-
-    float CosInner = cos(Light.InnerAngle);
-    float CosOuter = cos(Light.OuterAngle);
-    float CosAngle = dot(SpotDirection, LightDir);
-    
-    if (/*Distance > Light.Radius || #1#CosAngle < CosOuter)
-        return float3(0, 0, 0);
-    
-    float SpotAttenuation = saturate((CosAngle - CosOuter) / (CosInner - CosOuter));
-    float DistanceAttenuation = Light.Intensity / (1.0 + Light.AttenuationFalloff * Distance * Distance);
-    DistanceAttenuation *= 1.0 - smoothstep(0.0, Light.Radius, Distance);
-
-
-    float NdotL = max(dot(Normal, SpotDirection), 0.0);
-    float3 Diffuse = Light.Color.rgb * Albedo * NdotL;
-
-#if defined(LIGHTING_MODEL_LAMBERT)
-    return Diffuse * SpotAttenuation * DistanceAttenuation;
-#else
-    float3 HalfVec = normalize(SpotDirection + ViewDir);
-    float NdotH = max(dot(Normal, HalfVec), 0.0);
-    float Specular = pow(NdotH, SpecularScalar * 128.0) * SpecularScalar;
-    float3 specularColor = Light.Color.rgb * Specular * SpecularColor;
-
-    return (Diffuse + specularColor) * SpotAttenuation * DistanceAttenuation;
-#endif
-}*/
-/*cbuffer FMaterialConstants : register(b0)
-{
-    float3 DiffuseColor;
-    float TransparencyScalar;
-    float3 MatAmbientColor;
-    float DensityScalar;
-    float3 SpecularColor;
-    float SpecularScalar;
-    float3 EmissiveColor;
-    uint bHasNormalTexture;
-};*/
-Texture2DArray<float> ShadowMap : register(t4);
+Texture2DArray<float> SpotShadowMap : register(t4);
+TextureCubeArray<float> PointShadowMap : register(t5);
 SamplerComparisonState ShadowSampler : register(s4); // Shadow sampler
-float3 CalculateShadowSpotLight(FLightVP light, float3 worldPos, uint index)
+
+float3 CalculateShadowSpotLight(FLightVP light, float3 VertexWorldPos, uint index)
 {
     //float4 lightSpace = mul(light.LightVP, float4(worldPos, 1.0));
-    float4 lightSpace = mul(float4(worldPos, 1.0), light.LightVP);
+    float4 lightSpace = mul(float4(VertexWorldPos, 1.0), light.LightVP);
     lightSpace.xyz /= lightSpace.w;
 
     float2 uv =
@@ -239,7 +192,29 @@ float3 CalculateShadowSpotLight(FLightVP light, float3 worldPos, uint index)
     if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
         return 1.0;
 
-    return ShadowMap.SampleCmpLevelZero(ShadowSampler, float3(uv, index), z);
+    return SpotShadowMap.SampleCmpLevelZero(ShadowSampler, float3(uv, index), z);
+}
+
+float SamplePointShadow(FPointLight light, float3 VertexWorldPos, float3 normal, uint index)
+{
+    // 1) 라이트 방향과 거리
+    float3 L = VertexWorldPos - light.Position;
+    float dist = length(L);
+    
+    if (dist >= light.Radius) // 범위 밖이면 그림자 없음
+    {
+        return 1.0;
+    }
+
+    float3 dir = L / dist; // 방향 단위벡터
+    // (2) 정규화된 깊이값 (0…1)
+    float zNorm = dist / light.Radius;
+
+    // 1) dir.xyz + index → float4 로 묶어서 넘김
+    float4 coord = float4(dir.x, dir.y, dir.z, index);
+    
+    // (3) 큐브맵 배열에서 이 라이트 인덱스의 큐브 하나만 꺼내서 SampleCmp
+    return PointShadowMap.SampleCmp(ShadowSampler, coord, zNorm);
 }
 
 cbuffer FMaterialConstants : register(b0)
@@ -315,3 +290,4 @@ cbuffer FMatrixConstants : register(b7)
     bool isSelected;
     float3 pad0;
 };
+#endif

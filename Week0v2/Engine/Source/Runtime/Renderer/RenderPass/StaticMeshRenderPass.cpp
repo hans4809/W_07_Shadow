@@ -99,8 +99,11 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
     Graphics.DeviceContext->PSSetShaderResources(3, 1, &SBSRV);
 
-    ID3D11ShaderResourceView* shadowMap = renderResourceManager->GetShadowMapSRV(ShadowMap);
-    Graphics.DeviceContext->PSSetShaderResources(4, 1, &shadowMap);
+    ID3D11ShaderResourceView* SpotShadowMap = renderResourceManager->GetShadowMapSRV(SpotLightShadowMap);
+    Graphics.DeviceContext->PSSetShaderResources(4, 1, &SpotShadowMap);
+
+    ID3D11ShaderResourceView* PointShadowMap = renderResourceManager->GetShadowMapSRV(PointLightShadowMap);
+    Graphics.DeviceContext->PSSetShaderResources(5, 1, &PointShadowMap);
 
     Graphics.DeviceContext->PSSetSamplers(4, 1, &shadowSampler);
 }
@@ -132,10 +135,7 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
         View = curEditorViewportClient->GetViewMatrix();
         Proj = curEditorViewportClient->GetProjectionMatrix();
     }
-
-    // 일단 지금은 staticMesh돌면서 업데이트 해줄 필요가 없어서 여기 넣는데, Prepare에 넣을지 아니면 여기 그대로 둘지는 좀 더 생각해봐야함.
-    // 매프레임 한번씩만 해줘도 충분하고 라이트 갯수가 변경될때만 해줘도 충분할듯하다
-    // 지금 딸깍이에서 structuredBuffer도 처리해줘서 그 타이밍보고 나중에 다시 PSSetShaderResources를 해줘야함
+    
     UpdateComputeResource();
     
     UpdateCameraConstant(InViewportClient);
@@ -152,12 +152,8 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
         {
             isSelected = 1;
         }
-        // UpdateSkySphereTextureConstants(Cast<USkySphereComponent>(staticMeshComp));
         UpdateContstantBufferActor(UUIDColor , isSelected);
-
-        //Prepare에서 업로드 완료
-        //UpdateLightConstants();
-        //Renderer.LightManager->UploadLightConstants();
+        
         UpdateFlagConstant();
         
         UpdateComputeConstants(InViewportClient);

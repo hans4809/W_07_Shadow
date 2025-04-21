@@ -42,5 +42,6 @@ private:
     TArray<UStaticMeshComponent*> StaticMesheComponents;
 
     ID3D11SamplerState* shadowSampler = nullptr;
-    const FName ShadowMap = TEXT("SpotLightShadowMap");
+    const FName SpotLightShadowMap = TEXT("SpotLightShadowMap");
+    const FName PointLightShadowMap = TEXT("PointLightShadowMap");
 };

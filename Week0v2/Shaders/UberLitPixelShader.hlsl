@@ -5,9 +5,7 @@ Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
 
-
-
-StructuredBuffer<FLightVP> LightViewProjectionMatrix : register(t3);
+StructuredBuffer<FLightVP> SpotVP : register(t3);
 
 struct PS_INPUT
 {
@@ -97,8 +95,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // 방향광 처리  s
     TotalLight += CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
 
-    // 점광 처리  
-    for(uint j=0; j<NumPointLights; ++j)
+    // 점광 처리
+    [loop]
+    for(uint j = 0; j < NumPointLights; ++j)
     {
         uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
         uint lightIndex = TileLightIndices[listIndex];
@@ -112,7 +111,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     for (uint k = 0; k < NumSpotLights; ++k)
     {
-        float shadow = CalculateShadowSpotLight(LightViewProjectionMatrix[k], input.worldPos,k);
+        float shadow = CalculateShadowSpotLight(SpotVP[k], input.worldPos,k);
         float3 light = CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
         TotalLight += shadow * light;
     }
