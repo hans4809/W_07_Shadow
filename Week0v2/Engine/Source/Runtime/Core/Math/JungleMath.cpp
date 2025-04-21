@@ -83,6 +83,84 @@ FMatrix JungleMath::CreateOrthoProjectionMatrix(float width, float height, float
     return Projection;
 }
 
+void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float sliceNear, float sliceFar, float cameraNear, float cameraFar, TArray<FVector>& outCorners)
+{
+    // inv = (proj * view)^-1
+    const FMatrix inv = FMatrix::Inverse(camView * camProj);
+
+    float ndcZ_near = 2.0f * (sliceNear - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+    float ndcZ_far = 2.0f * (sliceFar - cameraNear) / (cameraFar - cameraNear) - 1.0f;
+
+    // 8개 코너의 z값에 각각 ndcZ_near, ndcZ_far를 사용
+    const float ndc[8][3] = {
+        {-1,-1,ndcZ_near}, {+1,-1,ndcZ_near}, {-1,+1,ndcZ_near}, {+1,+1,ndcZ_near},
+        {-1,-1,ndcZ_far }, {+1,-1,ndcZ_far }, {-1,+1,ndcZ_far }, {+1,+1,ndcZ_far }
+    };
+
+    //// NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
+    //const float ndc[8][3] = {
+    //    {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
+    //    {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
+    //};
+
+    outCorners.Empty();
+    outCorners.Reserve(8);
+
+    for (int i = 0; i < 8; ++i)
+    {
+        FVector4 ptNdc(ndc[i][0], ndc[i][1], ndc[i][2], 1.0f);
+
+        // NDC → World
+        FVector4 ptWorld4 = inv.TransformFVector4(ptNdc);
+
+        FVector ptWorld = ptWorld4.xyz() / ptWorld4.w;
+        outCorners.Add(ptWorld);
+    }
+}
+
+void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
+    const float InCascadeFar, const float InCameraNear, const float InCameraFar, FMatrix& OutLightView, FMatrix& OutLightProj)
+{
+    // 1) 카메라 프러스텀 슬라이스 코너 World Space
+    TArray<FVector> corners;
+    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
+
+    // 2) 슬라이스 중심
+    FVector center(0,0,0);
+    for (auto& c : corners) center += c;
+    center = center / corners.Num();
+
+    // 3) Light View 계산 (up은 Y축)
+    const FVector eye = center - InLightDir.Normalize() * 1000.0f;
+    OutLightView = CreateViewMatrix(eye, center, FVector(0,0,1));
+
+    // 4) Light Space에서 AABB 구하기
+    FVector mins( FLT_MAX,  FLT_MAX,  FLT_MAX );
+    FVector maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX );
+    for (auto& c : corners)
+    {
+        FVector ls = OutLightView.TransformPosition(c);
+        mins.x = FMath::Min(mins.x, ls.x);
+        mins.y = FMath::Min(mins.y, ls.y);
+        mins.z = FMath::Min(mins.z, ls.z);
+        maxs.x = FMath::Max(maxs.x, ls.x);
+        maxs.y = FMath::Max(maxs.y, ls.y);
+        maxs.z = FMath::Max(maxs.z, ls.z);
+    }
+
+    // 5) 직교 투영: 중심을 0,0으로 맞추기 위해 width/height는 extents*2
+    float width  = (maxs.x - mins.x);
+    float height = (maxs.y - mins.y);
+    float nearZ  = mins.z;
+    float farZ   = maxs.z;
+
+    width = FMath::Max(width, 10.0f);
+    height = FMath::Max(height, 10.0f);
+
+    // JungleMath의 대칭 오쏘 투영 (가로/세로 전체 크기, near, far)
+    OutLightProj = CreateOrthoProjectionMatrix(width, height, nearZ, farZ);
+}
+
 FVector JungleMath::FVectorRotate(FVector& origin, const FVector& rotation)
 {
     FQuat quaternion = JungleMath::EulerToQuaternion(rotation);
@@ -112,8 +190,7 @@ FQuat JungleMath::EulerToQuaternion(const FVector& eulerDegrees)
     quat.y = cosYaw * sinPitch * cosRoll + sinYaw * cosPitch * sinRoll;
     quat.z = sinYaw * cosPitch * cosRoll - cosYaw * sinPitch * sinRoll;
 
-    quat.Normalize();
-    return quat;
+    return quat.Normalize();
 }
 FVector JungleMath::QuaternionToEuler(const FQuat& quat)
 {
@@ -121,15 +198,15 @@ FVector JungleMath::QuaternionToEuler(const FQuat& quat)
 
     // 쿼터니언 정규화
     FQuat q = quat;
-    q.Normalize();
+    FQuat normalizedQ = q.Normalize();
 
     // Yaw (Z 축 회전)
-    float sinYaw = 2.0f * (q.w * q.z + q.x * q.y);
-    float cosYaw = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+    float sinYaw = 2.0f * (normalizedQ.w * normalizedQ.z + normalizedQ.x * normalizedQ.y);
+    float cosYaw = 1.0f - 2.0f * (normalizedQ.y * normalizedQ.y + normalizedQ.z * normalizedQ.z);
     euler.z = RadToDeg(atan2(sinYaw, cosYaw));
 
     // Pitch (Y 축 회전, 짐벌락 방지)
-    float sinPitch = 2.0f * (q.w * q.y - q.z * q.x);
+    float sinPitch = 2.0f * (normalizedQ.w * normalizedQ.y - normalizedQ.z * normalizedQ.x);
     if (fabs(sinPitch) >= 1.0f)
     {
         euler.y = RadToDeg(static_cast<float>(copysign(PI / 2, sinPitch))); // 🔥 Gimbal Lock 방지
@@ -140,8 +217,8 @@ FVector JungleMath::QuaternionToEuler(const FQuat& quat)
     }
 
     // Roll (X 축 회전)
-    float sinRoll = 2.0f * (q.w * q.x + q.y * q.z);
-    float cosRoll = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+    float sinRoll = 2.0f * (normalizedQ.w * normalizedQ.x + normalizedQ.y * normalizedQ.z);
+    float cosRoll = 1.0f - 2.0f * (normalizedQ.x * normalizedQ.x + normalizedQ.y * normalizedQ.y);
     euler.x = RadToDeg(atan2(sinRoll, cosRoll));
     return euler;
 }

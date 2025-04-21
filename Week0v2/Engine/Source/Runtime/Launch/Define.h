@@ -18,6 +18,10 @@
 #include "UserInterface/Console.h"
 #include "Serialization/Archive.h"
 
+// 임시
+#define MAX_CASCADES 4
+#define MAX_SPOT_LIGHTS 16
+#define MAX_POINT_LIGHTS 16
 
 struct FVertexSimple
 {

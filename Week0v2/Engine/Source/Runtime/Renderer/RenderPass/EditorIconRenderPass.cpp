@@ -94,6 +94,16 @@ void FEditorIconRenderPass::Execute(const std::shared_ptr<FViewportClient> InVie
 
         Graphics.DeviceContext->PSSetShaderResources(0, 1, &item->Texture->TextureSRV);
         
+        Graphics.DeviceContext->IASetInputLayout(nullptr);
+
+        // 2) slot 0 에 바인딩된 VB 해제
+        ID3D11Buffer* nullVB[1] = { nullptr };
+        uint32          zeroStride = 0;
+        uint32          zeroOffset = 0;
+        Graphics.DeviceContext->IASetVertexBuffers(0, 1, nullVB, &zeroStride, &zeroOffset);
+
+        // 3) 프리미티브 토폴로지 설정 (TriangleList)
+        Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         Graphics.DeviceContext->Draw(6, 0); // 내부에서 버텍스 사용중
     }
 }

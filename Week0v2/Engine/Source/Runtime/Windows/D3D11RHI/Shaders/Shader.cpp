@@ -1,7 +1,5 @@
 #include "Shader.h"
 
-#include "GraphicDevice.h"
-
 bool FShader::IsOutDated()
 {
     try

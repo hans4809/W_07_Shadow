@@ -19,6 +19,12 @@ public:
 
     bool HasAmbientLight() const { return AmbientLight != nullptr; }
     bool HasDirectionalLight() const { return DirectionalLight != nullptr; }
+
+    UAmbientLightComponent* GetAmbientLight() const { return AmbientLight; }
+    ULightComponentBase* GetDirectionalLight() const { return DirectionalLight; }
+
+    TArray<UPointLightComponent*>& GetVisiblePointLights() { return VisiblePointLights; }
+    TArray<USpotLightComponent*>& GetVisibleSpotLights() { return VisibleSpotLights; }
 private:
     UAmbientLightComponent* AmbientLight = nullptr;
     UDirectionalLightComponent* DirectionalLight = nullptr;

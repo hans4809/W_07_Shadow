@@ -369,9 +369,9 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\SpotLightActor.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.h" />
-    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\PixelShader.h" />
-    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shader.h" />
-    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\VertexShader.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\PixelShader.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\Shader.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\VertexShader.h" />
     <ClInclude Include="FEditorStateManager.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\DebugDepthRenderPass.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\PrimitiveDrawEditor.h" />
@@ -405,6 +405,12 @@
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\FogRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\AmbientLightActor.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\LightManager.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\DirectionalShadowMapRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\PointShadowMapRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\ShadowMapRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\SpotShadowMapRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.h" />
+    <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\GeometryShader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -477,10 +483,10 @@
     <FxCompile Include="Shaders\UberLitVertexShader.hlsl" />
     <FxCompile Include="Shaders\EditorVertexShader.hlsl" />
     <FxCompile Include="Shaders\EditorPixelShader.hlsl" />
-    <FxCompile Include="Shaders\TileLightCulling.compute" />
     <FxCompile Include="Shaders\ShadowMapVertexShader.hlsl" />
-    <FxCompile Include="Shaders\ShadowMapPixelShader.hlsl" />
     <FxCompile Include="Shaders\ShadowMapGeometryShader.hlsl" />
+    <FxCompile Include="Shaders\TileLightCullingComputeShader.hlsl" />
+    <FxCompile Include="Shaders\ShadowMapPixelShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
@@ -510,9 +516,9 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\SpotLightActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\GizmoRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\LineBatchRenderPass.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\PixelShader.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shader.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\VertexShader.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\PixelShader.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\Shader.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\VertexShader.cpp" />
     <ClCompile Include="FEditorStateManager.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\DebugDepthRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\PrimitiveDrawEditor.cpp" />
@@ -545,6 +551,12 @@
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\FogRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\AmbientLightActor.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\LightManager.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\DirectionalShadowMapRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\PointShadowMapRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\ShadowMapRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\SpotShadowMapRenderPass.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\GeometryShader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />

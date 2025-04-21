@@ -46,6 +46,10 @@ public:
     ID3D11Texture2D* DepthCopyTexture;
     ID3D11ShaderResourceView* DepthCopySRV;
 
+    ID3D11Texture2D* DirShadowTexture = nullptr;
+    ID3D11ShaderResourceView* DirShadowSRV = nullptr;
+    ID3D11DepthStencilView* DirShadowDSV = nullptr;
+
     //Fog 처리용 변수
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
     ID3D11Texture2D* SceneColorBuffer = nullptr;
@@ -56,6 +60,7 @@ public:
     void Initialize(HWND hWindow);
     void CreateDeviceAndSwapChain(HWND hWindow);
     void CreateDepthStencilBuffer(HWND hWindow);
+    void CreateDirectionalLightShadowMap();
     bool CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const;
     bool CreateRasterizerState(const D3D11_RASTERIZER_DESC* pRasterizerDesc, ID3D11RasterizerState** ppRasterizerState) const;
     bool CreateBlendState(const D3D11_BLEND_DESC* pBlendState, ID3D11BlendState** ppBlendState) const;
@@ -86,15 +91,17 @@ private:
     //ID3D11RasterizerState* CurrentRasterizer = nullptr;
 public:
     static bool CompileVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode);
+    static bool CompileGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode);
     static bool CompilePixelShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode);
-    static bool CompileComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode);
+    static bool CompileComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode);
 
-    bool CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVShader) const;
+    bool CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVS) const;
+    bool CreateGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11GeometryShader** ppGS) const;
     bool CreatePixelShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11PixelShader** ppPS) const;
-    bool CreateComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const;
+    bool CreateComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const;
 
     void ExtractVertexShaderInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos, ID3D11InputLayout*& OutInputLayout) const;
-    static void ExtractPixelShaderInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos);
+    static void ExtractShaderConstantInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos);
     static TArray<FConstantBufferInfo> ExtractConstantBufferInfos(ID3D11ShaderReflection* InReflector, const D3D11_SHADER_DESC& InShaderDecs);
     ID3D11InputLayout* ExtractInputLayout(ID3DBlob* InShaderBlob, ID3D11ShaderReflection* InReflector, const D3D11_SHADER_DESC& InShaderDecs) const;
 };

@@ -56,6 +56,11 @@ struct FSpotLight
     float pad;
 };
 
+struct FLightVP
+{
+    row_major float4x4 LightVP;
+};
+
 // ---------------------------------------------
 // 조명 계산 함수 정의
 // ---------------------------------------------
@@ -215,6 +220,28 @@ float3 CalculateSpotLight(
     float3 EmissiveColor;
     uint bHasNormalTexture;
 };*/
+Texture2DArray<float> ShadowMap : register(t4);
+SamplerComparisonState ShadowSampler : register(s4); // Shadow sampler
+float3 CalculateShadowSpotLight(FLightVP light, float3 worldPos, uint index)
+{
+    //float4 lightSpace = mul(light.LightVP, float4(worldPos, 1.0));
+    float4 lightSpace = mul(float4(worldPos, 1.0), light.LightVP);
+    lightSpace.xyz /= lightSpace.w;
+
+    float2 uv =
+    {
+        0.5f + lightSpace.x * 0.5f,
+        0.5f - lightSpace.y * 0.5f
+    };
+    //float z = lightSpace.z * 0.5 + 0.5;
+    float z = lightSpace.z;
+
+    if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
+        return 1.0;
+
+    return ShadowMap.SampleCmpLevelZero(ShadowSampler, float3(uv, index), z);
+}
+
 cbuffer FMaterialConstants : register(b0)
 {
     float3 DiffuseColor;

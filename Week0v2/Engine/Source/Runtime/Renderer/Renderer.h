@@ -10,6 +10,9 @@
 #include "RenderPass/DebugDepthRenderPass.h"
 #include "RenderPass/FogRenderPass.h"
 
+class FDirectionalShadowMapRenderPass;
+class FPointShadowMapRenderPass;
+class FSpotShadowMapRenderPass;
 class FLightManager;
 class FComputeTileLightCulling;
 class FEditorIconRenderPass;
@@ -23,7 +26,9 @@ class FRenderer
 {
 private:
     void CreateVertexPixelShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
-    void CreateComputeShader();
+    void CreateComputeShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
+    void CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* pDefines);
+    //void CreateComputeShader();
     //void CreateStaticMeshShader();
     //void CreateTextureShader();
     //void CreateLineBatchShader();
@@ -53,6 +58,8 @@ public:
     static D3D_SHADER_MACRO LambertDefines[];
     static D3D_SHADER_MACRO EditorGizmoDefines[];
     static D3D_SHADER_MACRO EditorIconDefines[];
+    static D3D_SHADER_MACRO DirectionalDefines[];
+    static D3D_SHADER_MACRO SpotLightDefines[];
     
     //Release
     void Release();
@@ -62,7 +69,7 @@ public:
 public:
     //Render Pass Demo
     
-    void AddRenderObjectsToRenderPass(UWorld* InWorld) const;
+    void AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_ptr<FEditorViewportClient>& ActiveViewport) const;
     void Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void ClearRenderObjects() const;
 
@@ -74,9 +81,12 @@ public:
     void CreateMappedCB(TMap<FShaderConstantKey, uint32>& ShaderStageToCB, const TArray<FConstantBufferInfo>& CBArray, EShaderStage Stage) const;
     
     void MappingVSPSInputLayout(FName InShaderProgramName, FName VSName, FName PSName, FName InInputLayoutName);
+    void MappingCS(FName InShaderProgramName, FName InCSName);
+    void MappingGS(FName InShaderProgramName, FName InGS);
     void MappingVSPSCBSlot(FName InShaderName, const TMap<FShaderConstantKey, uint32>& MappedConstants);
     void MappingVBTopology(FName InObjectName, FName InVBName, uint32 InStride, uint32 InNumVertices, D3D11_PRIMITIVE_TOPOLOGY InTopology= D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     void MappingIB(FName InObjectName, FName InIBName, uint32 InNumIndices);
+
 private: 
     TMap<FName, std::shared_ptr<FShaderProgram>> ShaderPrograms;
     TMap<FName, TMap<FShaderConstantKey, uint32>> ShaderConstantNameAndSlots;
@@ -89,6 +99,7 @@ private:
     std::shared_ptr<FStaticMeshRenderPass> GoroudRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> LambertRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> PhongRenderPass;
+    
     std::shared_ptr<FLineBatchRenderPass> LineBatchRenderPass;
     std::shared_ptr<FGizmoRenderPass> GizmoRenderPass;
     std::shared_ptr<FComputeTileLightCulling> ComputeTileLightCulling;
@@ -96,6 +107,10 @@ private:
     std::shared_ptr<FDebugDepthRenderPass> DebugDepthRenderPass;
     std::shared_ptr<FEditorIconRenderPass> EditorIconRenderPass;
     std::shared_ptr<FFogRenderPass> FogRenderPass;
+
+    std::shared_ptr<FDirectionalShadowMapRenderPass> DirectionalShadowMapRenderPass;
+    std::shared_ptr<FPointShadowMapRenderPass> PointShadowMapRenderPass;
+    std::shared_ptr<FSpotShadowMapRenderPass> SpotShadowMapRenderPass;
 
     ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBack;
     EViewModeIndex CurrentViewMode = VMI_Lit_Goroud;

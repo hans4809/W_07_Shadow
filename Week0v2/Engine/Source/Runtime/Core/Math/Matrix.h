@@ -26,7 +26,7 @@ struct FMatrix
     static FVector4 TransformVector(const FVector4& v, const FMatrix& m);
     static FMatrix CreateTranslationMatrix(const FVector& position);
     
-    FVector4 TransformFVector4(const FVector4& vector)
+    FVector4 TransformFVector4(const FVector4& vector) const
     {
         return FVector4(
             M[0][0] * vector.x + M[1][0] * vector.y + M[2][0] * vector.z + M[3][0] * vector.w,

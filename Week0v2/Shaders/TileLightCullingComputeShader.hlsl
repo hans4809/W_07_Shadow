@@ -1,7 +1,6 @@
 #pragma kernel TileCulling
 #include "ShaderHeaders/UberLitCommon.hlsli"
 
-
 // 출력 버퍼: 타일별 영향받는 광원 인덱스 리스트
 RWStructuredBuffer<uint> TileLightIndices : register(u0);
 

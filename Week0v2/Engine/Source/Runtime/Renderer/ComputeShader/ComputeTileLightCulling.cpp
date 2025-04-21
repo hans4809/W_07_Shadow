@@ -1,6 +1,7 @@
 #include "ComputeTileLightCulling.h"
 
 #include "EditorEngine.h"
+#include "LightManager.h"
 #include "UnrealClient.h"
 #include "Components/LightComponents/DirectionalLightComponent.h"
 #include "Components/LightComponents/PointLightComponent.h"
@@ -38,18 +39,18 @@ FComputeTileLightCulling::FComputeTileLightCulling(const FName& InShaderName)
 
 void FComputeTileLightCulling::AddRenderObjectsToRenderPass(UWorld* InWorld)
 {
-    LightComponents.Empty();
-    
-    if (InWorld->WorldType == EWorldType::Editor)
-    {
-        for (const auto iter : TObjectRange<USceneComponent>())
-        {
-            if (ULightComponentBase* pGizmoComp = Cast<ULightComponentBase>(iter))
-            {
-                LightComponents.Add(pGizmoComp);
-            }
-        }
-    }
+    // LightComponents.Empty();
+    //
+    // if (InWorld->WorldType == EWorldType::Editor)
+    // {
+    //     for (const auto iter : TObjectRange<USceneComponent>())
+    //     {
+    //         if (ULightComponentBase* pGizmoComp = Cast<ULightComponentBase>(iter))
+    //         {
+    //             LightComponents.Add(pGizmoComp);
+    //         }
+    //     }
+    // }
 }
 
 void FComputeTileLightCulling::Dispatch(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -99,7 +100,12 @@ void FComputeTileLightCulling::Dispatch(const std::shared_ptr<FViewportClient> I
     Graphics.DeviceContext->CSSetShader(renderResourceManager->GetComputeShader("TileLightCulling"), nullptr, 0);
     Graphics.DeviceContext->CSSetUnorderedAccessViews(0, 1, &TileCullingUAV, nullptr);
 
-    UpdateLightConstants();
+    const FRenderer& Renderer = GEngine->renderer;
+    std::shared_ptr<FEditorViewportClient> Viewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+    if (Viewport && Renderer.LightManager)
+    {
+        Renderer.LightManager->UploadLightConstants();
+    }
 
     UpdateComputeConstants(InViewportClient, numTilesX, numTilesY);
 
@@ -111,46 +117,46 @@ void FComputeTileLightCulling::Dispatch(const std::shared_ptr<FViewportClient> I
     Graphics.DeviceContext->CSSetUnorderedAccessViews(0, 1, nullUAV, nullptr);
 }
 
-void FComputeTileLightCulling::UpdateLightConstants()
-{
-    FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
-    FGraphicsDevice& Graphics = GEngine->graphicDevice;
-    
-    FLightingConstants LightConstant;
-    uint32 PointLightCount = 0;
-
-    for (ULightComponentBase* Comp : LightComponents)
-    {
-        UPointLightComponent* PointLightComp = dynamic_cast<UPointLightComponent*>(Comp);
-
-        if (PointLightComp)
-        {
-            LightConstant.PointLights[PointLightCount].Color = PointLightComp->GetLightColor();
-            LightConstant.PointLights[PointLightCount].Intensity = PointLightComp->GetIntensity();
-            LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetWorldLocation();
-            LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
-            LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
-            PointLightCount++;
-            continue;
-        }
-
-        UDirectionalLightComponent* DirectionalLightComp = dynamic_cast<UDirectionalLightComponent*>(Comp);
-        if (DirectionalLightComp)
-        {
-            LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
-            LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
-            LightConstant.DirLight.Direction = DirectionalLightComp->GetForwardVector();
-            continue;
-        }
-    }
-
-    LightConstant.NumPointLights = PointLightCount;
-
-    ID3D11Buffer* LightConstantBuffer = renderResourceManager->GetConstantBuffer(TEXT("FLightingConstants"));
-    
-    Graphics.DeviceContext->CSSetConstantBuffers(1, 1, &LightConstantBuffer);
-    renderResourceManager->UpdateConstantBuffer(LightConstantBuffer, &LightConstant);
-}
+// void FComputeTileLightCulling::UpdateLightConstants()
+// {
+//     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
+//     FGraphicsDevice& Graphics = GEngine->graphicDevice;
+//     
+//     FLightingConstants LightConstant;
+//     uint32 PointLightCount = 0;
+//
+//     for (ULightComponentBase* Comp : LightComponents)
+//     {
+//         UPointLightComponent* PointLightComp = dynamic_cast<UPointLightComponent*>(Comp);
+//
+//         if (PointLightComp)
+//         {
+//             LightConstant.PointLights[PointLightCount].Color = PointLightComp->GetLightColor();
+//             LightConstant.PointLights[PointLightCount].Intensity = PointLightComp->GetIntensity();
+//             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetWorldLocation();
+//             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
+//             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
+//             PointLightCount++;
+//             continue;
+//         }
+//
+//         UDirectionalLightComponent* DirectionalLightComp = dynamic_cast<UDirectionalLightComponent*>(Comp);
+//         if (DirectionalLightComp)
+//         {
+//             LightConstant.DirLight.Color = DirectionalLightComp->GetLightColor();
+//             LightConstant.DirLight.Intensity = DirectionalLightComp->GetIntensity();
+//             LightConstant.DirLight.Direction = DirectionalLightComp->GetForwardVector();
+//             continue;
+//         }
+//     }
+//
+//     LightConstant.NumPointLights = PointLightCount;
+//
+//     ID3D11Buffer* LightConstantBuffer = renderResourceManager->GetConstantBuffer(TEXT("FLightingConstants"));
+//     
+//     Graphics.DeviceContext->CSSetConstantBuffers(1, 1, &LightConstantBuffer);
+//     renderResourceManager->UpdateConstantBuffer(LightConstantBuffer, &LightConstant);
+// }
 
 void FComputeTileLightCulling::UpdateComputeConstants(const std::shared_ptr<FViewportClient> InViewportClient, int NumTileX, int NumTileY)
 {

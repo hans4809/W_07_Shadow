@@ -11,6 +11,7 @@ void FGraphicsDevice::Initialize(const HWND hWindow)
     CreateFrameBuffer();
     CreateDepthStencilBuffer(hWindow);
     CreateSceneColorResources();
+    CreateDirectionalLightShadowMap();
 
     //CreateDepthStencilState();
     //CreateDepthStencilSRV();
@@ -101,6 +102,43 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
         MessageBox(hWindow, errorMsg, L"Error", MB_ICONERROR | MB_OK);
         return;
     }
+}
+
+void FGraphicsDevice::CreateDirectionalLightShadowMap()
+{
+    // 사전에 한 번만: 그림자 맵 해상도
+    static const UINT SM_SIZE = 2048;
+
+    // 1) ShadowMap 텍스쳐
+    D3D11_TEXTURE2D_DESC texDesc = {};
+    texDesc.Width     = SM_SIZE;
+    texDesc.Height    = SM_SIZE;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = MAX_CASCADES;
+    texDesc.Format    = DXGI_FORMAT_R32_TYPELESS;
+    texDesc.SampleDesc.Count = 1;                    // ← MSAA 아님!
+    texDesc.SampleDesc.Quality = 0;
+    texDesc.Usage            = D3D11_USAGE_DEFAULT;
+    texDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    Device->CreateTexture2D(&texDesc, nullptr, &DirShadowTexture);
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 뷰
+    dsvDesc.Texture2DArray.FirstArraySlice = 0;                       // ← 여기
+    dsvDesc.Texture2DArray.ArraySize = MAX_CASCADES;            // ← 여기
+    dsvDesc.Texture2DArray.MipSlice = 0;                       // ← 그리고 MipSlice
+    HRESULT hr1 = Device->CreateDepthStencilView(DirShadowTexture, &dsvDesc, &DirShadowDSV);
+
+    // 3) SRV
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;  // Array 전용 SRV
+    srvDesc.Texture2DArray.FirstArraySlice = 0;                        // ← 여기
+    srvDesc.Texture2DArray.ArraySize = MAX_CASCADES;             // ← 여기
+    srvDesc.Texture2DArray.MostDetailedMip = 0;                        // ← 그리고 Mip 설정
+    srvDesc.Texture2DArray.MipLevels = 1;
+    HRESULT hr2 = Device->CreateShaderResourceView(DirShadowTexture, &srvDesc, &DirShadowSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const
@@ -529,6 +567,34 @@ bool FGraphicsDevice::CompileVertexShader(const std::filesystem::path& InFilePat
     return true;
 }
 
+bool FGraphicsDevice::CompileGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
+{
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;   
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+
+    ID3DBlob* errorBlob = nullptr;
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
+
+    const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainGS", "gs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        return false;
+    }
+
+    return true;
+}
+
 bool FGraphicsDevice::CompilePixelShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -556,7 +622,7 @@ bool FGraphicsDevice::CompilePixelShader(const std::filesystem::path& InFilePath
     return true;
 }
 
-bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
+bool FGraphicsDevice::CompileComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode)
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -565,10 +631,8 @@ bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_
     shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
-
-    const std::filesystem::path current = std::filesystem::current_path();
-    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
-    const std::wstring shaderFilePath = fullpath.wstring();
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
     const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainCS", "cs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
@@ -586,7 +650,7 @@ bool FGraphicsDevice::CompileComputeShader(const FString& InFileName, const D3D_
     return true;
 }
 
-bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVShader) const
+bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11VertexShader** ppVS) const
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -597,13 +661,10 @@ bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath
     ID3DBlob* errorBlob = nullptr;
     
     const std::wstring shaderFilePath = InFilePath.wstring();
-    
-    HRESULT hr;
-    if (pDefines)
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
-    else
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
 
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS",
+                                    "vs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    
     if (FAILED(hr))
     {
         if (errorBlob)
@@ -618,7 +679,43 @@ bool FGraphicsDevice::CreateVertexShader(const std::filesystem::path& InFilePath
     if(Device == nullptr)
         return false;
 
-    if (FAILED(Device->CreateVertexShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppVShader)))
+    if (FAILED(Device->CreateVertexShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppVS)))
+        return false;
+
+    return true;
+}
+
+bool FGraphicsDevice::CreateGeometryShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode,
+    ID3D11GeometryShader** ppGS) const
+{
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef  _DEBUG
+    shaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+
+    ID3DBlob* errorBlob = nullptr;
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
+
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainGS",
+                                    "gs_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            // errorBlob에 저장된 메시지를 출력 (디버그 출력이나 콘솔 등)
+            OutputDebugStringA(reinterpret_cast<const char*>(errorBlob->GetBufferPointer()));
+            errorBlob->Release();
+        }
+        abort();
+    }
+    
+    if (Device == nullptr)
+        return false;
+
+    if (FAILED(Device->CreateGeometryShader((*ppCode)->GetBufferPointer(), (*ppCode)->GetBufferSize(), nullptr, ppGS)))
         return false;
 
     return true;
@@ -634,13 +731,10 @@ bool FGraphicsDevice::CreatePixelShader(const std::filesystem::path& InFilePath,
 
     ID3DBlob* errorBlob = nullptr;
     
-    const std::wstring shaderFilePath = InFilePath.wstring();    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
-    HRESULT hr;
-    if (pDefines)
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
-    else
-        hr = D3DCompileFromFile(shaderFilePath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
+    HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS",
+                                    "ps_5_0", shaderFlags, 0, ppCode, &errorBlob);
     
     if (FAILED(hr))
     {
@@ -662,7 +756,7 @@ bool FGraphicsDevice::CreatePixelShader(const std::filesystem::path& InFilePath,
     return true;
 }
 
-bool FGraphicsDevice::CreateComputeShader(const FString& InFileName, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const
+bool FGraphicsDevice::CreateComputeShader(const std::filesystem::path& InFilePath, const D3D_SHADER_MACRO* pDefines, ID3DBlob** ppCode, ID3D11ComputeShader** ppComputeShader) const
 {
     DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef  _DEBUG
@@ -671,10 +765,8 @@ bool FGraphicsDevice::CreateComputeShader(const FString& InFileName, const D3D_S
     shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
 
     ID3DBlob* errorBlob = nullptr;
-
-    const std::filesystem::path current = std::filesystem::current_path();
-    const std::filesystem::path fullpath = current / TEXT("Shaders") / *InFileName;
-    const std::wstring shaderFilePath = fullpath.wstring();
+    
+    const std::wstring shaderFilePath = InFilePath.wstring();
 
     const HRESULT hr = D3DCompileFromFile(shaderFilePath.c_str(), pDefines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainCS", "cs_5_0", shaderFlags, 0, ppCode, &errorBlob);
     
@@ -725,7 +817,7 @@ void FGraphicsDevice::ExtractVertexShaderInfo(ID3DBlob* shaderBlob, TArray<FCons
     SAFE_RELEASE(pReflector);
 }
 
-void FGraphicsDevice::ExtractPixelShaderInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos)
+void FGraphicsDevice::ExtractShaderConstantInfo(ID3DBlob* shaderBlob, TArray<FConstantBufferInfo>& OutCBInfos)
 {
     ID3D11ShaderReflection* pReflector = nullptr;
     HRESULT hr = D3DReflect(shaderBlob->GetBufferPointer(),

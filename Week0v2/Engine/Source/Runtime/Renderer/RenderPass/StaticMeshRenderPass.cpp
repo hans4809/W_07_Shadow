@@ -23,8 +23,27 @@
 #include "Renderer/ComputeShader/ComputeTileLightCulling.h"
 
 #include "LevelEditor/SLevelEditor.h"
-
+#include <d3d11.h>
 extern UEditorEngine* GEngine;
+
+FStaticMeshRenderPass::FStaticMeshRenderPass(const FName& InShaderName) : FBaseRenderPass(InShaderName)
+{
+    const FGraphicsDevice& Graphics = GEngine->graphicDevice;
+    D3D11_SAMPLER_DESC desc = {};
+    desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; //  Comparison 필터
+    desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;  // 또는 BORDER
+    desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+    desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+    desc.BorderColor[0] = 1.0f;
+    desc.BorderColor[1] = 1.0f;
+    desc.BorderColor[2] = 1.0f;
+    desc.BorderColor[3] = 1.0f;
+    desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;  //  깊이 비교 함수 (일반적으로 LessEqual)
+    desc.MinLOD = 0;
+    desc.MaxLOD = 0;
+
+    HRESULT hr = Graphics.Device->CreateSamplerState(&desc, &shadowSampler);
+}
 
 void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
 {
@@ -37,12 +56,6 @@ void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
                 if (!Cast<UGizmoBaseComponent>(actorComp))
                     StaticMesheComponents.Add(pStaticMeshComp);
             }
-            
-            /*
-            if (ULightComponentBase* pGizmoComp = Cast<ULightComponentBase>(actorComp))
-            {
-                LightComponents.Add(pGizmoComp);
-            }*/
         }
     }
 }
@@ -56,12 +69,6 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     std::shared_ptr<FEditorViewportClient> Viewport = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
     if (Viewport && Renderer.LightManager)
     {
-        /*FMatrix View = Viewport->GetViewMatrix();
-        FMatrix Proj = Viewport->GetProjectionMatrix();
-        FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
-
-        Renderer.LightManager->CullLights(Frustum);
-        */
         Renderer.LightManager->UploadLightConstants();
     }
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
@@ -84,6 +91,18 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
     Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
+
+    //Shadow Prepare
+
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+    
+    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
+    Graphics.DeviceContext->PSSetShaderResources(3, 1, &SBSRV);
+
+    ID3D11ShaderResourceView* shadowMap = renderResourceManager->GetShadowMapSRV(ShadowMap);
+    Graphics.DeviceContext->PSSetShaderResources(4, 1, &shadowMap);
+
+    Graphics.DeviceContext->PSSetSamplers(4, 1, &shadowSampler);
 }
 
 void FStaticMeshRenderPass::UpdateComputeResource()
@@ -289,21 +308,6 @@ void FStaticMeshRenderPass::UpdateFlagConstant()
             continue;
         }
         
-        if (USpotLightComponent* SpotLightComp = Cast<USpotLightComponent>(Comp))
-        {
-            LightConstant.SpotLights[SpotLightCount].Position = SpotLightComp->GetComponentLocation();
-            LightConstant.SpotLights[SpotLightCount].Color = SpotLightComp->GetLightColor();
-            LightConstant.SpotLights[SpotLightCount].Intensity = SpotLightComp->GetIntensity();
-            LightConstant.SpotLights[SpotLightCount].Direction = SpotLightComp->GetOwner()->GetActorForwardVector();
-            LightConstant.SpotLights[SpotLightCount].InnerAngle = SpotLightComp->GetInnerConeAngle();
-            LightConstant.SpotLights[SpotLightCount].OuterAngle = SpotLightComp->GetOuterConeAngle();
-            LightConstant.SpotLights[SpotLightCount].Radius = SpotLightComp->GetRadius();
-            LightConstant.SpotLights[SpotLightCount].AttenuationFalloff = SpotLightComp->GetAttenuationFalloff();
-
-            SpotLightCount++;
-            continue;
-        }
-        
 
         if (UPointLightComponent* PointLightComp = Cast<UPointLightComponent>(Comp))
         {
@@ -312,7 +316,6 @@ void FStaticMeshRenderPass::UpdateFlagConstant()
             LightConstant.PointLights[PointLightCount].Position = PointLightComp->GetComponentLocation();
             LightConstant.PointLights[PointLightCount].Radius = PointLightComp->GetRadius();
             LightConstant.PointLights[PointLightCount].AttenuationFalloff = PointLightComp->GetAttenuationFalloff();
-
             PointLightCount++;
             continue;
         }
