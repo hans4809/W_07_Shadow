@@ -9,6 +9,9 @@
 //tile 기반 최대치
 #define MAX_POINTLIGHT_COUNT 16
 
+// DirLight cascade 개수
+#define MAX_CASCADES 4
+
 // 타일 크기 (조명 타일링 기준)
 #define TILE_SIZE_X 16
 #define TILE_SIZE_Y 16
@@ -26,6 +29,13 @@ struct FDirectionalLight
     
     float Intensity;
     float3 Direction;
+    row_major float4x4 ViewProjectionMatrix[MAX_CASCADES];
+    float CascadeSplits0;
+    float CascadeSplits1;
+    float CascadeSplits2;
+    float CascadeSplits3;
+    float CascadeSplits4;
+    float3 pad;
 };
 
 struct FPointLight

@@ -435,7 +435,7 @@ void FGraphicsDevice::BindSamplers(uint32 StartSlot, uint32 NumSamplers, ID3D11S
     BindSampler(EShaderStage::VS, StartSlot, NumSamplers, ppSamplers);
     //BindSampler(EShaderStage::HS, StartSlot, NumSamplers, ppSamplers);
     //BindSampler(EShaderStage::DS, StartSlot, NumSamplers, ppSamplers);
-    //BindSampler(EShaderStage::GS, StartSlot, NumSamplers, ppSamplers);
+    BindSampler(EShaderStage::GS, StartSlot, NumSamplers, ppSamplers);
     BindSampler(EShaderStage::PS, StartSlot, NumSamplers, ppSamplers);
 }
 

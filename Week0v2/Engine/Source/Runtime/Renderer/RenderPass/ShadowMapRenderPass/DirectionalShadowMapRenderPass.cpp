@@ -38,6 +38,16 @@ void FDirectionalShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> I
     // DSV Array 바인딩 & 클리어
     Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.DirShadowDSV);
+
+    D3D11_VIEWPORT vp =
+    {
+        0, 0,
+        static_cast<float>(2048),
+        static_cast<float>(2048),
+        0.0f, 1.0f
+    };
+
+    Graphics.DeviceContext->RSSetViewports(1, &vp);
 }
 
 void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
@@ -79,19 +89,20 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
         //  너무 얕은 구간은 강제로 보정
         cascadeSplits[i] = FMath::Max(splitZ, minCascadeDepth);
     }
+    Renderer.LightManager->GetDirectionalLight()->SetCascadeSplits(cascadeSplits);
     cascadeCB.NumCascades = MAX_CASCADES;
     for (int i = 0; i < MAX_CASCADES; ++i)
     {
         FMatrix lightView, lightProj;
         JungleMath::ComputeDirLightVP(
-            Renderer.LightManager->GetDirectionalLight()->GetForwardVector(),
+            Renderer.LightManager->GetDirectionalLight()->GetOwner()->GetActorForwardVector(),
             View, Proj,
             cascadeSplits[i], cascadeSplits[i+1],
             camNear, camFar,
             lightView, lightProj
         );
         cascadeCB.LightVP[i] = lightView * lightProj;
-
+        Renderer.LightManager->GetDirectionalLight()->SetViewProjectionMatrix(i, cascadeCB.LightVP[i]);
     }
 
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)
@@ -128,6 +139,9 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             Graphics.DeviceContext->DrawIndexedInstanced(indexCount, MAX_CASCADES, startIndex, 0, 0);
         }
     }
+    
+    // 바인딩 해제
+    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 }
 
 void FDirectionalShadowMapRenderPass::ClearRenderObjects()

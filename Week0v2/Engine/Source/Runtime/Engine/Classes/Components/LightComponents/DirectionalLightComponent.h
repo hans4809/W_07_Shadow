@@ -36,7 +36,25 @@ public:
     UDirectionalLightComponent(const UDirectionalLightComponent& Other);
     virtual ~UDirectionalLightComponent() override = default;
 public:
-
+    FMatrix& GetViewProjectionMatrix(int32 CascadeIndex)
+    {
+        return ViewProjectionMatrix[CascadeIndex];
+    }
+    void SetViewProjectionMatrix(int32 CascadeIndex, const FMatrix& InViewProjectionMatrix)
+    {
+        ViewProjectionMatrix[CascadeIndex] = InViewProjectionMatrix;
+    }
+    const float* GetCascadeSplits() const
+    {
+        return CascadeSplits;
+    }
+    void SetCascadeSplits(const float* InCascadeSplits)
+    {
+        for (int32 i = 0; i < MAX_CASCADES + 1; ++i)
+        {
+            CascadeSplits[i] = InCascadeSplits[i];
+        }
+    }
 public:
     virtual UObject* Duplicate() const override;
     virtual void DuplicateSubObjects(const UObject* Source) override;
@@ -45,6 +63,9 @@ public:
 public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
+private:
+    FMatrix ViewProjectionMatrix[MAX_CASCADES];
+    float CascadeSplits[MAX_CASCADES + 1];
 };
 
 

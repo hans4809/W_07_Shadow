@@ -21,7 +21,7 @@ public:
     bool HasDirectionalLight() const { return DirectionalLight != nullptr; }
 
     UAmbientLightComponent* GetAmbientLight() const { return AmbientLight; }
-    ULightComponentBase* GetDirectionalLight() const { return DirectionalLight; }
+    UDirectionalLightComponent* GetDirectionalLight() const { return DirectionalLight; }
 
     TArray<UPointLightComponent*>& GetVisiblePointLights() { return VisiblePointLights; }
     TArray<USpotLightComponent*>& GetVisibleSpotLights() { return VisibleSpotLights; }

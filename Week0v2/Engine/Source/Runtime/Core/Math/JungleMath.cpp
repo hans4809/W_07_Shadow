@@ -83,39 +83,71 @@ FMatrix JungleMath::CreateOrthoProjectionMatrix(float width, float height, float
     return Projection;
 }
 
-void JungleMath::GetFrustumCornersWS(const FMatrix& camProj, const FMatrix& camView, float sliceNear, float sliceFar, float cameraNear, float cameraFar, TArray<FVector>& outCorners)
+void JungleMath::GetFrustumCornersWS(const FMatrix& camView, const FMatrix& camProj, float sliceNear, float sliceFar, float cameraNear, float cameraFar, TArray<FVector>& outCorners)
 {
-    // inv = (proj * view)^-1
-    const FMatrix inv = FMatrix::Inverse(camView * camProj);
-
-    float ndcZ_near = 2.0f * (sliceNear - cameraNear) / (cameraFar - cameraNear) - 1.0f;
-    float ndcZ_far = 2.0f * (sliceFar - cameraNear) / (cameraFar - cameraNear) - 1.0f;
-
-    // 8개 코너의 z값에 각각 ndcZ_near, ndcZ_far를 사용
-    const float ndc[8][3] = {
-        {-1,-1,ndcZ_near}, {+1,-1,ndcZ_near}, {-1,+1,ndcZ_near}, {+1,+1,ndcZ_near},
-        {-1,-1,ndcZ_far }, {+1,-1,ndcZ_far }, {-1,+1,ndcZ_far }, {+1,+1,ndcZ_far }
+    // 1. 전체 카메라 프러스텀의 8개 NDC 코너 정의 (DirectX 스타일: near z = 0, far z = 1)
+    const float ndcCorners[8][3] = {
+        {-1.0f, -1.0f, 0.0f}, // 0: near bottom left
+         { 1.0f, -1.0f, 0.0f}, // 1: near bottom right
+         { 1.0f,  1.0f, 0.0f}, // 2: near top right
+        {-1.0f,  1.0f, 0.0f}, // 3: near top left
+        {-1.0f, -1.0f, 1.0f}, // 4: far bottom left
+         { 1.0f, -1.0f, 1.0f}, // 5: far bottom right
+         { 1.0f,  1.0f, 1.0f}, // 6: far top right
+        {-1.0f,  1.0f, 1.0f}  // 7: far top left
     };
 
-    //// NDC 공간의 8개 코너 (Z: NDC 기준 -1~1)
-    //const float ndc[8][3] = {
-    //    {-1,-1,-1}, {+1,-1,-1}, {-1,+1,-1}, {+1,+1,-1},
-    //    {-1,-1,+1}, {+1,-1,+1}, {-1,+1,+1}, {+1,+1,+1},
-    //};
-
-    outCorners.Empty();
-    outCorners.Reserve(8);
-
+    // 2. 전체 프러스텀의 월드 코너 구하기
+    FMatrix invViewProj = FMatrix::Inverse(camView * camProj);
+    FVector worldCorners[8];
     for (int i = 0; i < 8; ++i)
     {
-        FVector4 ptNdc(ndc[i][0], ndc[i][1], ndc[i][2], 1.0f);
-
-        // NDC → World
-        FVector4 ptWorld4 = inv.TransformFVector4(ptNdc);
-
-        FVector ptWorld = ptWorld4.xyz() / ptWorld4.w;
-        outCorners.Add(ptWorld);
+        FVector4 ptNdc;
+        ptNdc.x = ndcCorners[i][0];
+        ptNdc.y = ndcCorners[i][1];
+        ptNdc.z = ndcCorners[i][2];
+        ptNdc.w = 1.0f;
+        FVector4 ptWorld4 = invViewProj.TransformFVector4(ptNdc);
+        worldCorners[i] = ptWorld4.xyz() / ptWorld4.w;
     }
+
+    // 3. 전체 카메라 프러스텀의 깊이는 cameraNear ~ cameraFar입니다.
+    //    슬라이스의 near/far 비율을 계산합니다.
+    float nearFrac = (sliceNear - cameraNear) / (cameraFar - cameraNear);
+    float farFrac = (sliceFar - cameraNear) / (cameraFar - cameraNear);
+
+    // 4. 각 전체 프러스텀 코너의 선분(near와 far 코너 사이)을 선형 보간하여 슬라이스의 코너를 계산합니다.
+    //    - 먼저, 전체 프러스텀의 네 개의 near 코너 (인덱스 0~3)와 far 코너 (인덱스 4~7)의 선분을 이용합니다.
+    outCorners.Empty();
+    outCorners.Reserve(8);
+    // 슬라이스의 near 평면 코너 (인덱스 0~3)
+    for (int i = 0; i < 4; ++i)
+    {
+        FVector interpNear = worldCorners[i] + (worldCorners[i + 4] - worldCorners[i]) * nearFrac;
+        outCorners.Add(interpNear);
+    }
+    // 슬라이스의 far 평면 코너 (인덱스 4~7)
+    for (int i = 0; i < 4; ++i)
+    {
+        FVector interpFar = worldCorners[i] + (worldCorners[i + 4] - worldCorners[i]) * farFrac;
+        outCorners.Add(interpFar);
+    }
+}
+
+FVector JungleMath::IntersectThreePlanes(const FPlane& p1, const FPlane& p2, const FPlane& p3)
+{
+    FVector n1(p1.A, p1.B, p1.C);
+    FVector n2(p2.A, p2.B, p2.C);
+    FVector n3(p3.A, p3.B, p3.C);
+
+    float denom = n1.Dot(n2.Cross(n3));
+    if (fabs(denom) < 1e-6f) return FVector(0, 0, 0); // 평면이 평행하거나 잘못된 경우
+
+    FVector result =
+        (n2.Cross(n3) * -p1.D -
+            n3.Cross(n1) * -p2.D -
+            n1.Cross(n2) * -p3.D) / denom;
+    return result;
 }
 
 void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InCamView, const FMatrix& InCamProj, const float InCascadeNear,
@@ -123,7 +155,7 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
 {
     // 1) 카메라 프러스텀 슬라이스 코너 World Space
     TArray<FVector> corners;
-    GetFrustumCornersWS(InCamProj, InCamView, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
+    GetFrustumCornersWS(InCamView, InCamProj, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
 
     // 2) 슬라이스 중심
     FVector center(0,0,0);
