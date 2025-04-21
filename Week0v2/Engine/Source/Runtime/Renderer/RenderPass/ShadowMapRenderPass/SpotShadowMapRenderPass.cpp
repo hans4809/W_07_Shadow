@@ -51,7 +51,7 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
     Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::LessEqual), 0);
     Graphics.DeviceContext->ClearDepthStencilView(Graphics.SpotShadowDSV, D3D11_CLEAR_DEPTH,1,0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.SpotShadowDSV);
-}
+} 
 
 void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
 {
@@ -69,10 +69,11 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
     for (uint32 visibleLightIndex = 0; visibleLightIndex < lightManager->GetVisibleSpotLights().Num(); ++visibleLightIndex)
     {
         USpotLightComponent* spotLight = lightManager->GetVisibleSpotLights()[visibleLightIndex];
-        FVector LightPos = spotLight->GetWorldLocation();
-        FVector LightTarget = LightPos + spotLight->GetForwardVector();
-        FMatrix LightView = JungleMath::CreateViewMatrix(LightPos, LightTarget, FVector(0.f,0.f,1.f));
-        FMatrix LightProjection = JungleMath::CreateProjectionMatrix(spotLight->GetInnerConeRad() * 2.f, 1.0f, camNear, camFar);
+        FVector LightPos = spotLight->GetOwner()->GetActorLocation();
+        FVector LightTarget = LightPos + spotLight->GetOwner()->GetActorForwardVector();
+        FVector LightUp = spotLight->GetOwner()->GetActorUpVector();
+        FMatrix LightView = JungleMath::CreateViewMatrix(LightPos, LightTarget, LightUp);
+        FMatrix LightProjection = JungleMath::CreateProjectionMatrix(spotLight->GetOuterConeRad() * 2.f, 1.0f, camNear, camFar);
         FMatrix VP = LightView * LightProjection;
         viewProjMatrixes.Add(VP);
     }
