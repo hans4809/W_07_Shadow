@@ -105,8 +105,10 @@ PS_OUTPUT mainPS(PS_INPUT input)
         {
             break;
         }
-        
-        TotalLight += CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+
+        float shadow = SamplePointShadow(PointLights[lightIndex], input.worldPos, Normal, lightIndex);
+        float3 light = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+        TotalLight += shadow * light;
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)
