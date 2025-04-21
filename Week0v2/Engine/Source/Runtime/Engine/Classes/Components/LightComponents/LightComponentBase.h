@@ -3,6 +3,7 @@
 #include "Components/SceneComponent.h"
 #include "UObject/ObjectMacros.h"
 
+class ID3D11ShaderResourceView;
 struct FLightComponentBaseInfo : public FSceneComponentInfo
 {
     DECLARE_ACTORCOMPONENT_INFO(FLightComponentBaseInfo);
@@ -62,11 +63,12 @@ public:
     void SetColor(FVector4 newColor);
     FVector4 GetColor() const;
 
+    ID3D11ShaderResourceView* ShadowSRVSlice;
 protected:
     FVector4 LightColor = { 1, 1, 1, 1 }; // RGBA
     float Intensity = 1.0f;
     bool bCastShadows = false;
-    
+
 public:
     FVector4 GetLightColor() const { return LightColor; }
     float GetIntensity() const { return Intensity; }

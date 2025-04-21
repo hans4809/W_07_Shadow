@@ -127,16 +127,20 @@ public:
         ID3D11Texture2D* CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension);
         ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
         ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
+        TArray<ID3D11ShaderResourceView*> CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, uint32 SliceCount);
         //AddOrSet ShadowMap
         void AddOrSetSRVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
         void AddOrSetDSVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
         void AddOrSetSRVShadowMapSRV(FName InSRVName, ID3D11ShaderResourceView* InShadowSRV);
         void AddOrSetDSVShadowMapDSV(FName InDSVName, ID3D11DepthStencilView* InShadowDSV);
+        void AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D11ShaderResourceView*> InShadowSliceSRVs);
         //Get ShadowMap
         ID3D11ShaderResourceView* GetShadowMapSRV(const FName InName) const;
         ID3D11DepthStencilView* GetShadowMapDSV(const FName InName) const;
+        ID3D11ShaderResourceView* GetShadowMapSliceSRVs(const FName InName, int index) const;
 private:
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>> SRVShadowMap;
+    TMap<FName, TArray<ID3D11ShaderResourceView*>> SRVShadowMapSlice;
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>> DSVShadowMap;
 private:
     FGraphicsDevice* GraphicDevice = nullptr;

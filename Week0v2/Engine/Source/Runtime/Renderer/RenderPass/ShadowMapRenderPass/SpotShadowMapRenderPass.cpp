@@ -134,11 +134,14 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
         renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
     ID3D11ShaderResourceView* ShadowMapSRVArray =
         renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
+    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs = 
+        renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
 
     renderResourceManager->AddOrSetSRVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
     renderResourceManager->AddOrSetSRVShadowMapSRV(ShadowMap, ShadowMapSRVArray);
     renderResourceManager->AddOrSetDSVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
     renderResourceManager->AddOrSetDSVShadowMapDSV(ShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapSlice(ShadowMap, Texture2DArraySliceSRVs);
 }
 
 void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()

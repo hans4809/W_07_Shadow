@@ -386,6 +386,7 @@ void PropertyEditorPanel::Render()
                 {
                     SpotLight->SetAttenuationFallOff(falloffVal);
                 }
+                ImGui::Image(reinterpret_cast<ImTextureID>(SpotLight->ShadowSRVSlice), ImVec2(512, 512));
                 ImGui::Spacing();
             }
         }
