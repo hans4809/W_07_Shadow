@@ -348,6 +348,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         SpotShadowMapRenderPass->Execute(ActiveViewport);
     }
 
+    Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
     {
         //TODO : FLAG로 나누기

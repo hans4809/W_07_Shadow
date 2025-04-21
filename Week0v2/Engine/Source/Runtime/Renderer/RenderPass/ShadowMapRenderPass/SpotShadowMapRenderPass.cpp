@@ -43,6 +43,16 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
     const FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
+    D3D11_VIEWPORT shadowViewport = {};
+    shadowViewport.TopLeftX = 0;
+    shadowViewport.TopLeftY = 0;
+    shadowViewport.Width = (FLOAT)MapWidth;
+    shadowViewport.Height = (FLOAT)MapHeight;
+    shadowViewport.MinDepth = 0.0f;
+    shadowViewport.MaxDepth = 1.0f;
+
+    Graphics.DeviceContext->RSSetViewports(1, &shadowViewport);
+
     ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
     Graphics.DeviceContext->VSSetShaderResources(0, 1, &SBSRV);
 
@@ -105,6 +115,7 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
         }
     }
 
+    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, nullptr); // 완전히 언바인드
 }
 
 void FSpotShadowMapRenderPass::ClearRenderObjects()
@@ -177,13 +188,14 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* Lig
         JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
 
     const float OuterConeAngleRad = FMath::DegreesToRadians(LightComp->GetOuterConeAngle());
+    const float OuterConeAngle = LightComp->GetOuterConeAngle();
     const float AspectRatio = 1.0f;
     const float NearZ = 1.0f;
-    //const float FarZ = LightComp->GetRadius();
-    const float FarZ = 1000;
+    const float FarZ = LightComp->GetRadius();
+    //const float FarZ = 1000;
 
     const FMatrix ProjectionMatrix =
-        JungleMath::CreateProjectionMatrix(OuterConeAngleRad, AspectRatio, NearZ, FarZ);
+        JungleMath::CreateProjectionMatrix(OuterConeAngle*2, AspectRatio, NearZ, FarZ);
 
     return ViewMatrix * ProjectionMatrix;
 }
