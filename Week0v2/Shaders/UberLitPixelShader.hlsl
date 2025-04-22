@@ -140,7 +140,8 @@ PS_OUTPUT mainPS(PS_INPUT input)
     if (IsSelectedActor == 1)
          TotalLight = TotalLight * 10.0f;
     TotalLight += EmissiveColor; // 자체 발광  
-
+    
+    float mapDepth = 1.0f;
     if(DirLight.bCastShadow)
     {
         
@@ -170,16 +171,12 @@ PS_OUTPUT mainPS(PS_INPUT input)
     // 4. Shadow Map 샘플링
     float bias = 0.005; // 실험적으로 조정
     shadowDepth -= bias;
-    float mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(shadowUV, cascadeIndex), shadowDepth).r;
+    mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(shadowUV, cascadeIndex), shadowDepth).r;
     
     // 방향광 처리
-    TotalLight += mapDepth * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
         
     }
-    else
-    {
-        TotalLight += CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
-    }
+    TotalLight += mapDepth * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
     // 점광 처리
     [loop]
     for(uint j = 0; j < NumPointLights; ++j)

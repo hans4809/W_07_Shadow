@@ -121,7 +121,7 @@ void FLightManager::UploadLightConstants()
             Constants.DirLight.ViewProjectionMatrix[i] = DirectionalLight->GetViewProjectionMatrix(i);
         for (int i = 0; i < MAX_CASCADES + 1; i++)
             Constants.DirLight.CascadeSplits[i] = DirectionalLight->GetCascadeSplits()[i];
-        Constants.DirLight.Intensity = DirectionalLight->CanCastShadows();
+        Constants.DirLight.bCastShadow = DirectionalLight->CanCastShadows();
     }
     if (AmbientLight)
     {
