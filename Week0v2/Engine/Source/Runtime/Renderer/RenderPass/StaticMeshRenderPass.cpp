@@ -94,6 +94,9 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
 
     ID3D11ShaderResourceView* PointShadowMap = renderResourceManager->GetShadowMapSRV(PointLightShadowMap);
     Graphics.DeviceContext->PSSetShaderResources(6, 1, &PointShadowMap);
+    
+    ID3D11ShaderResourceView* DirShadowMap = renderResourceManager->GetShadowMapSRV(DirLightShadowMap);
+    Graphics.DeviceContext->PSSetShaderResources(7, 1, &DirShadowMap);
 }
 
 void FStaticMeshRenderPass::UpdateComputeResource()
@@ -128,8 +131,6 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
     
     UpdateCameraConstant(InViewportClient);
     
-    // DirLight ShadowSRV
-    Graphics.DeviceContext->PSSetShaderResources(7, 1, &Graphics.DirShadowSRV);
 
     for (UStaticMeshComponent* staticMeshComp : StaticMesheComponents)
     {

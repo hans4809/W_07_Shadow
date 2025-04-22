@@ -147,8 +147,8 @@ public:
         ID3D11ShaderResourceView* GetShadowMapSliceSRVs(const FName InName, int index) const;
 private:
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>> SRVShadowMap;
-    TMap<FName, TArray<ID3D11ShaderResourceView*>> SRVShadowMapSlice;
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>> DSVShadowMap;
+    TMap<FName, TArray<ID3D11ShaderResourceView*>> SRVShadowMapSlice;
 private:
     FGraphicsDevice* GraphicDevice = nullptr;
     

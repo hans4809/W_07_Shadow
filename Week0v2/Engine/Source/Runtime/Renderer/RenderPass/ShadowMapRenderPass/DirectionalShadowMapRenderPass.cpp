@@ -12,6 +12,7 @@
 FDirectionalShadowMapRenderPass::FDirectionalShadowMapRenderPass(const FName& InShaderName)
     : FShadowMapRenderPass(InShaderName)
 {
+    CreateShadowMapResource();
 }
 
 FDirectionalShadowMapRenderPass::~FDirectionalShadowMapRenderPass()
@@ -29,21 +30,27 @@ void FDirectionalShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> I
 
     FGraphicsDevice& Graphics = GEngine->graphicDevice;
     FRenderer& Renderer = GEngine->renderer;
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+
     auto curConstantBuffer = Renderer.GetResourceManager()->GetConstantBuffer(TEXT("FCascadeCB"));
-    ID3D11DepthStencilState* DepthStencilState =
-            Renderer.GetResourceManager()->GetDepthStencilState(EDepthStencilState::LessEqual);
+
     Graphics.DeviceContext->GSSetConstantBuffers(0, 1, &curConstantBuffer);
     Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
-    Graphics.DeviceContext->ClearDepthStencilView(Graphics.DirShadowDSV, D3D11_CLEAR_DEPTH,1,0);
-    // DSV Array 바인딩 & 클리어
+
+    ID3D11DepthStencilState* DepthStencilState =
+            Renderer.GetResourceManager()->GetDepthStencilState(EDepthStencilState::LessEqual);
     Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
-    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, Graphics.DirShadowDSV);
+
+    ID3D11DepthStencilView* ShadowMapDSVArray =
+        renderResourceManager->GetShadowMapDSV(DirLightShadowMap);
+    Graphics.DeviceContext->ClearDepthStencilView(ShadowMapDSVArray, D3D11_CLEAR_DEPTH,1,0);
+    Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowMapDSVArray);
 
     D3D11_VIEWPORT vp =
     {
         0, 0,
-        static_cast<float>(2048),
-        static_cast<float>(2048),
+        static_cast<float>(MapWidth),
+        static_cast<float>(MapHeight),
         0.0f, 1.0f
     };
 
@@ -147,4 +154,26 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
 void FDirectionalShadowMapRenderPass::ClearRenderObjects()
 {
     FShadowMapRenderPass::ClearRenderObjects();
+}
+
+void FDirectionalShadowMapRenderPass::CreateShadowMapResource()
+{
+    FRenderer& Renderer = GEngine->renderer;
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+
+    ID3D11Texture2D* ShadowMapTexture2DArray =
+        renderResourceManager->CreateTexture2DArray(MapWidth, MapHeight, MAX_CASCADES);
+    ID3D11DepthStencilView* ShadowMapDSVArray =
+        renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_CASCADES);
+    ID3D11ShaderResourceView* ShadowMapSRVArray =
+        renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_CASCADES);
+    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
+        renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_CASCADES);
+
+    renderResourceManager->AddOrSetSRVShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetSRVShadowMapSRV(DirLightShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetDSVShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetDSVShadowMapDSV(DirLightShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapSlice(DirLightShadowMap, Texture2DArraySliceSRVs);
+
 }

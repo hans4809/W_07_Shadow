@@ -13,5 +13,10 @@ public:
     void Prepare(std::shared_ptr<FViewportClient> InViewportClient) override;
     void ClearRenderObjects() override;
 private:
-    
+    void CreateShadowMapResource();
+
+    const uint32 MapWidth = 2048;
+    const uint32 MapHeight = 2048;
+
+    const FName DirLightShadowMap = TEXT("DirLightShadowMap");
 };

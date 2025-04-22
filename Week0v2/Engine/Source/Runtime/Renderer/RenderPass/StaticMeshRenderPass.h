@@ -43,6 +43,7 @@ private:
 
     const FName SpotLightShadowMap = TEXT("SpotLightShadowMap");
     const FName PointLightShadowMap = TEXT("PointLightShadowMap");
+    const FName DirLightShadowMap = TEXT("DirLightShadowMap");
 
     const FName SpotLightVPMat = TEXT("SpotLightVPMat");
 };
