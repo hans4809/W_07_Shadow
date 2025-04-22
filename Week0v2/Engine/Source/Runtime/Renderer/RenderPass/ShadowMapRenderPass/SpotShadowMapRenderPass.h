@@ -14,8 +14,10 @@ public:
     void ClearRenderObjects() override;
 private:
     void CreateShadowMapResource();
-    void UpdateLightStructuredBuffer();
+    void UpdateLightStructuredBuffer(std::shared_ptr<FViewportClient> InViewportClient);
     FMatrix ComputeViewProj(const USpotLightComponent* LightComp);
+    FMatrix ComputeViewProjPSM(const USpotLightComponent* LightComp,
+        std::shared_ptr<FViewportClient> InViewportClient);
 private:
     const uint32 MapWidth = 1024;
     const uint32 MapHeight = 1024;

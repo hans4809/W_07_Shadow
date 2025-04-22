@@ -92,7 +92,7 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
 
     FLightManager* LightManager = Renderer.LightManager;
     uint32 NumSpotLights = LightManager->GetVisibleSpotLights().Num();
-    UpdateLightStructuredBuffer();
+    UpdateLightStructuredBuffer(InViewportClient);
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)
     {
         const FMatrix Model = JungleMath::CreateModelMatrix(staticMeshComp->GetComponentLocation(), staticMeshComp->GetComponentRotation(),
@@ -159,7 +159,7 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
     renderResourceManager->AddOrSetSRVShadowMapSlice(SpotLightShadowMap, Texture2DArraySliceSRVs);
 }
 
-void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
+void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer(std::shared_ptr<FViewportClient> InViewportClient)
 {
     FRenderer& Renderer = GEngine->renderer;
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
@@ -192,22 +192,86 @@ void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
     }
 }
 
-FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* LightComp)  
-{  
+FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* LightComp)
+{
    const FVector LightPos = LightComp->GetComponentLocation();  
    const FVector LightDir = LightComp->GetOwner()->GetActorForwardVector();  
    const FVector LightUp = LightComp->GetOwner()->GetActorUpVector();  
+    const FMatrix ViewMatrix =
+        JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
 
-   const FMatrix ViewMatrix =  
-       JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);  
+    const float OuterConeAngle = LightComp->GetOuterConeAngle();
+    const float AspectRatio = 1.0f;
+    const float NearZ = 1.0f;
+    const float FarZ = LightComp->GetRadius();
 
-   const float OuterConeAngle = LightComp->GetOuterConeAngle();  
-   const float AspectRatio = 1.0f;  
-   const float NearZ = 1.0f;  
-   const float FarZ = LightComp->GetRadius();  
+    const FMatrix ProjectionMatrix =
+        JungleMath::CreateProjectionMatrix(OuterConeAngle * 2, AspectRatio, NearZ, FarZ);
+
+    // Fix: Remove const qualifier to allow calling SetViewProjectionMatrix  
+    const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
+    const_cast<USpotLightComponent*>(LightComp)->SetProjectionMatrix(ProjectionMatrix);
+
+    return ViewMatrix * ProjectionMatrix;
+}
+
+FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* LightComp, std::shared_ptr<FViewportClient> InViewportClient)
+{  
+    std::shared_ptr<FEditorViewportClient> Camera = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+
+    FMatrix CameraView = Camera->GetViewMatrix();
+    FMatrix CameraProj = Camera->GetProjectionMatrix();
+
+    FMatrix CameraViewProj = CameraView * CameraProj;
+    FMatrix InvCameraViewProj = FMatrix::Inverse(CameraView);
+
+    FVector NDCPoints[8] = {
+    {-1,-1,0}, {1,-1,0}, {-1,1,0}, {1,1,0},
+    {-1,-1,1}, {1,-1,1}, {-1,1,1}, {1,1,1},
+    };
+
+    FVector WorldPoints[8];
+    for (int i = 0; i < 8; ++i)
+    {
+        FVector4 clip = FVector4(NDCPoints[i], 1);
+        FVector4 world = InvCameraViewProj.TransformFVector4(clip);
+        WorldPoints[i] = FVector(world.x/world.w,world.y/world.w,world.z/world.w);
+    }
+
+   const FVector LightUp = LightComp->GetOwner()->GetActorUpVector();  
+   const FVector LightDir = LightComp->GetOwner()->GetActorForwardVector();  
+   const FVector LightTarget = FVector(0,0,0);  
+   const FVector LightPos = LightTarget-LightDir*10.0f;  
+   const FMatrix ViewMatrix =
+        JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
+
+   FVector Min = +FLT_MAX, Max = -FLT_MAX;
+   for (int i = 0; i < 8; ++i)
+   {
+       FVector p = ViewMatrix.TransformPosition(WorldPoints[i]);
+       Min.x = std::min(Min.x, p.x);
+       Min.y = std::min(Min.y, p.y);
+       Min.z = std::min(Min.z, p.z);
+
+       Max.x = std::max(Max.x, p.x);
+       Max.y = std::max(Max.y, p.y);
+       Max.z = std::max(Max.z, p.z);
+   }
+
+   FVector BoxCenter = (Min + Max) * 0.5f;
+   FVector BoxExtent = (Max - Min) * 0.5f;
+
+   float nearZ = std::max(1.0f, Min.z); // LH 좌표계에서 z는 + 방향으로 멀어짐
+   float farZ = Max.z;
+
+   float height = BoxExtent.y * 2.0f;
+   float fovY = 2.0f * atanf(height * 0.5f / nearZ);
+
+   float width = BoxExtent.x * 2.0f;
+   float aspect = width / height;
 
    const FMatrix ProjectionMatrix =  
-       JungleMath::CreateProjectionMatrix(OuterConeAngle * 2, AspectRatio, NearZ, FarZ);  
+       JungleMath::CreateProjectionMatrix(fovY, aspect, nearZ, farZ);  
 
    // Fix: Remove const qualifier to allow calling SetViewProjectionMatrix  
    const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
