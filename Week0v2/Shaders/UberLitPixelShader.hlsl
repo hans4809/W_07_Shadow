@@ -154,22 +154,22 @@ PS_OUTPUT mainPS(PS_INPUT input)
     [loop]
     for(uint j = 0; j < NumPointLights; ++j)
     {
-        uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
-        uint lightIndex = TileLightIndices[listIndex];
-        if (lightIndex == 0xFFFFFFFF)
-        {
-            break;
-        }
+        // uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
+        // uint lightIndex = TileLightIndices[listIndex];
+        // if (lightIndex == 0xFFFFFFFF)
+        // {
+        //     break;
+        // }
 
-        float3 L = input.worldPos - PointLights[lightIndex].Position;
+        float3 L = input.worldPos - PointLights[j].Position;
         float dist = length(L);
         float3 dir = L/dist;
 
         uint face = ComputeCubeface(dir);
-        uint pointVPIndex = lightIndex * 6 + face;
+        uint pointVPIndex = j * 6 + face;
 
-        float shadow = SamplePointShadow(PointVP[pointVPIndex], PointLights[lightIndex], input.worldPos, lightIndex);
-        float3 light = CalculatePointLight(PointLights[lightIndex], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+        float shadow = SamplePointShadow(PointVP[pointVPIndex], PointLights[j], input.worldPos, j);
+        float3 light = CalculatePointLight(PointLights[j], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
         TotalLight += shadow * light;
     }
     

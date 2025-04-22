@@ -74,13 +74,6 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateComputeShader(TEXT("TileLightCulling"), nullptr);
     ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
     
-    D3D_SHADER_MACRO defines[] = 
-    {
-        {"LIGHTING_MODEL_GOURAUD", "1"},
-        {nullptr, nullptr}
-    };
-    //SetViewMode(VMI_Lit_Phong);
-    
     CreateVertexPixelShader(TEXT("UberLit"), GouradDefines);
     FString GouradShaderName = TEXT("UberLit");
     GouradShaderName += GouradDefines->Name;

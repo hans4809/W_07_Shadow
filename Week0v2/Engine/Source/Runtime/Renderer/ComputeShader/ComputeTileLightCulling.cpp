@@ -27,7 +27,7 @@ FComputeTileLightCulling::FComputeTileLightCulling(const FName& InShaderName)
     ID3D11UnorderedAccessView* TileCullingUAV = renderResourceManager->GetStructuredBufferUAV("TileLightCulling");
     if (TileCullingUAV == nullptr)
     {
-        SB = renderResourceManager->CreateUAVStructuredBuffer<UINT>(1);
+        SB = renderResourceManager->CreateUAVStructuredBuffer<uint32>(1);
         SBSRV = renderResourceManager->CreateBufferSRV(SB, 1);
         SBUAV = renderResourceManager->CreateBufferUAV(SB, 1);  
 

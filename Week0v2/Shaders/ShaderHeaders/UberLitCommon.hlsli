@@ -5,7 +5,7 @@
 // 조명 구조체 정의
 // ---------------------------------------------
 // 최대 라이트 수 정의 (컴파일 타임 상수)
-#define NUM_POINT_LIGHT 8
+#define NUM_POINT_LIGHT 16
 #define NUM_SPOT_LIGHT 16
 //tile 기반 최대치
 #define MAX_POINTLIGHT_COUNT 16
@@ -206,7 +206,7 @@ float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos,
 
     float3 dir = normalize(LightToWorld);
 
-    return PointShadowMap.SampleCmp(ShadowSampler, float4(dir, index), z);
+    return PointShadowMap.SampleCmpLevelZero(ShadowSampler, float4(dir, index), z);
 }
 
 cbuffer FMaterialConstants : register(b0)
