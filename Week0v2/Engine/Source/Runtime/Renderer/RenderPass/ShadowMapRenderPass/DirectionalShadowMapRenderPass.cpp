@@ -80,7 +80,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
     cascadeSplits[0]                = camNear;
     cascadeSplits[MAX_CASCADES]     = camFar;
 
-    const float lambda = 0.5f; // 0=완전 균등, 1=완전 로그, 0.5=절충
+    const float lambda = 1.0f; // 0=완전 균등, 1=완전 로그, 0.5=절충
     const float minCascadeDepth = 1.0f; // 또는 0.5f, 원하는 값으로 조정
 
     for (int i = 1; i < MAX_CASCADES; ++i)
