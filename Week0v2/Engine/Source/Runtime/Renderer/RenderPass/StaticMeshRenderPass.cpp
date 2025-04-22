@@ -28,6 +28,7 @@ extern UEditorEngine* GEngine;
 
 FStaticMeshRenderPass::FStaticMeshRenderPass(const FName& InShaderName) : FBaseRenderPass(InShaderName)
 {
+    //TODO Sampler ResourceManager로 옮기기.
     const FGraphicsDevice& Graphics = GEngine->graphicDevice;
     D3D11_SAMPLER_DESC desc = {};
     desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; //  Comparison 필터
@@ -92,10 +93,12 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
     ID3D11SamplerState* linearSampler = Renderer.GetSamplerState(ESamplerType::Linear);
     Graphics.DeviceContext->PSSetSamplers(static_cast<uint32>(ESamplerType::Linear), 1, &linearSampler);
 
-    //Shadow Prepare
-
-    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
     
+    //Prepare Shadow Map For Spot Light.
+    //SpotLightVPMat, ShadowMap 이름이 SpotShadowMapRenderPass와 동일해야 함.
+    //TODO ShadowSampler ResourceManager로 옮기기
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+   
     ID3D11ShaderResourceView* SpotSBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
     Graphics.DeviceContext->PSSetShaderResources(3, 1, &SpotSBSRV);
 

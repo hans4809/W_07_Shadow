@@ -14,10 +14,11 @@ public:
     void ClearRenderObjects() override;
 private:
     void CreateShadowMapResource();
-    void UpdateLightStructuredBuffer(std::shared_ptr<FViewportClient> InViewportClient);
+    void UpdateLightStructuredBuffer();
     FMatrix ComputeViewProj(const USpotLightComponent* LightComp);
 private:
     const uint32 MapWidth = 512;
     const uint32 MapHeight = 512;
     const FName SpotLightShadowMap = TEXT("SpotLightShadowMap");
+    const FName SpotLightVPMat = TEXT("SpotLightVPMat");
 };
