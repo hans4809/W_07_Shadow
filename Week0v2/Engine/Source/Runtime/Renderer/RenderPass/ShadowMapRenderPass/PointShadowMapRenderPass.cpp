@@ -165,6 +165,9 @@ TArray<FMatrix> FPointShadowMapRenderPass::GetLightViewProjectionMatrix(const UP
         FMatrix proj = JungleMath::CreateProjectionMatrix(PIDIV2, 1.0f, LightComp->GetRadius() * 0.01f, LightComp->GetRadius());
         FMatrix vpMat = view * proj;
         ViewProjMatrices.Add(vpMat);
+
+        const_cast<UPointLightComponent*>(LightComp)->SetViewMatrix(face, view);
+        const_cast<UPointLightComponent*>(LightComp)->SetProjectionMatrix(face, proj);
     }
 
     return ViewProjMatrices;

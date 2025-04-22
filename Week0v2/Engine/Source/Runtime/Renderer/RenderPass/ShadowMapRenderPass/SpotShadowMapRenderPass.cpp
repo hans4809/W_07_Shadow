@@ -192,22 +192,26 @@ void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
     }
 }
 
-FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* LightComp)
-{
-    const FVector LightPos = LightComp->GetComponentLocation();
-    const FVector LightDir = LightComp->GetOwner()->GetActorForwardVector();
-    const FVector LightUp = LightComp->GetOwner()->GetActorUpVector();
+FMatrix FSpotShadowMapRenderPass::ComputeViewProj(const USpotLightComponent* LightComp)  
+{  
+   const FVector LightPos = LightComp->GetComponentLocation();  
+   const FVector LightDir = LightComp->GetOwner()->GetActorForwardVector();  
+   const FVector LightUp = LightComp->GetOwner()->GetActorUpVector();  
 
-    const FMatrix ViewMatrix =
-        JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
+   const FMatrix ViewMatrix =  
+       JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);  
 
-    const float OuterConeAngle = LightComp->GetOuterConeAngle();
-    const float AspectRatio = 1.0f;
-    const float NearZ = 1.0f;
-    const float FarZ = LightComp->GetRadius();
+   const float OuterConeAngle = LightComp->GetOuterConeAngle();  
+   const float AspectRatio = 1.0f;  
+   const float NearZ = 1.0f;  
+   const float FarZ = LightComp->GetRadius();  
 
-    const FMatrix ProjectionMatrix =
-        JungleMath::CreateProjectionMatrix(OuterConeAngle*2, AspectRatio, NearZ, FarZ);
+   const FMatrix ProjectionMatrix =  
+       JungleMath::CreateProjectionMatrix(OuterConeAngle * 2, AspectRatio, NearZ, FarZ);  
 
-    return ViewMatrix * ProjectionMatrix;
+   // Fix: Remove const qualifier to allow calling SetViewProjectionMatrix  
+   const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
+   const_cast<USpotLightComponent*>(LightComp)->SetProjectionMatrix(ProjectionMatrix);
+
+   return ViewMatrix * ProjectionMatrix;  
 }
