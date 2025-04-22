@@ -215,8 +215,9 @@ float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos,
     float z = lightSpace.z;
 
     float3 dir = normalize(LightToWorld);
-
-    return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z);
+    
+    float bias = 0.005; // 실험적으로 조정
+    return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z - bias);
 }
 
 cbuffer FMaterialConstants : register(b0)
