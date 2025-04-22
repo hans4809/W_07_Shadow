@@ -232,7 +232,7 @@ void PropertyEditorPanel::Render()
                 }
 
                 // Point Light: 페이스 선택 UI
-                if (lightObj->IsA<UPointLightComponent>()) {
+                if (lightObj->IsA<UPointLightComponent>() && !lightObj->IsA<USpotLightComponent>()) {
                     ImGui::Text("Point Light Faces:");
                     const char* faces[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
                     for (int i = 0; i < 6; ++i) {
