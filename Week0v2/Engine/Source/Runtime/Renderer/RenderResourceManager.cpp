@@ -838,6 +838,39 @@ ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11
     return SRV;
 }
 
+TArray<ID3D11ShaderResourceView*> FRenderResourceManager::CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, uint32 SliceCount)
+{
+    TArray<ID3D11ShaderResourceView*> SliceSRVs;
+
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    TextureArray->GetDesc(&textureDesc);
+
+    for (uint32 sliceIndex = 0; sliceIndex < SliceCount; ++sliceIndex)
+    {
+        D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Format = DXGI_FORMAT_R32_FLOAT; // or textureDesc.Format, if readable
+        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+        srvDesc.Texture2DArray.MostDetailedMip = 0;
+        srvDesc.Texture2DArray.MipLevels = 1;
+        srvDesc.Texture2DArray.FirstArraySlice = sliceIndex;
+        srvDesc.Texture2DArray.ArraySize = 1; // Only one slice!
+
+        ID3D11ShaderResourceView* sliceSRV = nullptr;
+        HRESULT hr = GraphicDevice->Device->CreateShaderResourceView(TextureArray, &srvDesc, &sliceSRV);
+        if (SUCCEEDED(hr))
+        {
+            SliceSRVs.Add(sliceSRV);
+        }
+        else
+        {
+            // Log or break here if necessary
+        }
+    }
+
+    return SliceSRVs;
+}
+
+void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
 ID3D11Texture2D* FRenderResourceManager::CreateTextureCube2DArray(const uint32 Width, const uint32 Height, const uint32 CubeCount) const
 {
     D3D11_TEXTURE2D_DESC td = {};
@@ -944,6 +977,23 @@ void FRenderResourceManager::AddOrSetDSVShadowMapDSV(const FName InShadowMapName
     DSVShadowMap[InShadowMapName].Value = InShadowDSV;
 }
 
+void FRenderResourceManager::AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D11ShaderResourceView*> InShadowSliceSRVs)
+{
+    if (SRVShadowMapSlice.Contains(InName))
+    {
+        for (ID3D11ShaderResourceView* SRV : SRVShadowMapSlice[InName])
+        {
+            if (SRV)
+            {
+                SRV->Release();
+            }
+        }
+        SRVShadowMapSlice[InName].Empty();
+    }
+
+    SRVShadowMapSlice.Add(InName, InShadowSliceSRVs);
+}
+
 ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSRV(const FName InName) const
 {
     if (SRVShadowMap.Contains(InName))
@@ -959,6 +1009,15 @@ ID3D11DepthStencilView* FRenderResourceManager::GetShadowMapDSV(const FName InNa
     if (DSVShadowMap.Contains(InName))
     {
         return DSVShadowMap[InName].Value;
+    }
+    return nullptr;
+}
+
+ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, int index) const
+{
+    if (SRVShadowMapSlice.Contains(InName))
+    {
+        return SRVShadowMapSlice[InName][index];
     }
     return nullptr;
 }

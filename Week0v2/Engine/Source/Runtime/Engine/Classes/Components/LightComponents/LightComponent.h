@@ -79,6 +79,7 @@ protected:
 
     // 그림자 경계의 선명도를 조절하는 값 (값이 클수록 더 날카로운 그림자 경계)
     float ShadowSharpen = 0.0f;
+
 public:
     void TickComponent(float DeltaTime) override;
     int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;

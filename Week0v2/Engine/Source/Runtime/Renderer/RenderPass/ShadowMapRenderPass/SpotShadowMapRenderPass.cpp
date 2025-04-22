@@ -23,6 +23,19 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
     renderResourceManager->AddOrSetSRVStructuredBufferSRV(SpotLightVPMat, SBSRV);
 
     CreateShadowMapResource();
+
+    D3D11_RASTERIZER_DESC rasterDesc = {};
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.DepthClipEnable = true;
+
+    // Depth Bias 설정
+    rasterDesc.DepthBias = 1;            // 정수 값
+    rasterDesc.SlopeScaledDepthBias = 1.0f;       // 기울기 기반 Bias
+    rasterDesc.DepthBiasClamp = 0.0f;             // Bias 최대값 제한 (보통 0.0f)
+
+    // Rasterizer State 생성
+    HRESULT hr = Graphics.Device->CreateRasterizerState(&rasterDesc, &rasterizerState);
 }
 
 FSpotShadowMapRenderPass::~FSpotShadowMapRenderPass()
@@ -53,7 +66,7 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
 
     Graphics.DeviceContext->RSSetViewports(1, &shadowViewport);
 
-    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
+    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(SpotLightVPMat);
     Graphics.DeviceContext->VSSetShaderResources(0, 1, &SBSRV);
 
     Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
@@ -66,6 +79,8 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
         renderResourceManager->GetShadowMapDSV(SpotLightShadowMap);
     Graphics.DeviceContext->ClearDepthStencilView(ShadowMapDSVArray, D3D11_CLEAR_DEPTH, 1, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowMapDSVArray);
+
+    Graphics.DeviceContext->RSSetState(rasterizerState);
 }
 
 void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
@@ -134,11 +149,14 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
         renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
     ID3D11ShaderResourceView* ShadowMapSRVArray =
         renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
+    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs = 
+        renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
 
     renderResourceManager->AddOrSetSRVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
     renderResourceManager->AddOrSetSRVShadowMapSRV(SpotLightShadowMap, ShadowMapSRVArray);
     renderResourceManager->AddOrSetDSVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
     renderResourceManager->AddOrSetDSVShadowMapDSV(SpotLightShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapSlice(SpotLightShadowMap, Texture2DArraySliceSRVs);
 }
 
 void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()

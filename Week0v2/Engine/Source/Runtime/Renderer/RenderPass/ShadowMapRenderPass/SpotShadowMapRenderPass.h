@@ -21,4 +21,8 @@ private:
     const uint32 MapHeight = 512;
     const FName SpotLightShadowMap = TEXT("SpotLightShadowMap");
     const FName SpotLightVPMat = TEXT("SpotLightVPMat");
+
+
+    ID3D11RasterizerState* rasterizerState = nullptr;
+
 };

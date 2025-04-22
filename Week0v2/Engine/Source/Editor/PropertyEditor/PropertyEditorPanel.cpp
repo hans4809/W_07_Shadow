@@ -40,7 +40,9 @@ void PropertyEditorPanel::Render()
     ImGui::SetNextWindowPos(ImVec2(PanelPosX, PanelPosY), ImGuiCond_Always);
 
     /* Panel Size */
-    ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
+    //ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
+    //ShadowMap을 위해 512 사이즈 고정
+    ImGui::SetNextWindowSize(ImVec2(PanelWidth, 512), ImGuiCond_Always);
 
     /* Panel Flags */
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
@@ -390,6 +392,7 @@ void PropertyEditorPanel::Render()
                 {
                     SpotLight->SetAttenuationFallOff(falloffVal);
                 }
+                ImGui::Image(reinterpret_cast<ImTextureID>(SpotLight->ShadowSRVSlice), ImVec2(PanelWidth, PanelWidth));
                 ImGui::Spacing();
             }
         }

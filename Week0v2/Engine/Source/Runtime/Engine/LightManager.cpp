@@ -6,7 +6,8 @@
 #include "Math/JungleMath.h"
 #include "Renderer/RenderResourceManager.h"
 #include "UnrealEd/PrimitiveBatch.h"
-
+#include "Components/LightComponents/PointLightComponent.h"
+#include "Components/LightComponents/SpotLightComponent.h"
 void FLightManager::CollectLights(UWorld* InWorld)
 {
     AllPointLights.Empty();
@@ -33,16 +34,31 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
     VisiblePointLights.Empty();
     VisibleSpotLights.Empty();
 
+    FRenderer& Renderer = GEngine->renderer;
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+    int PointLightID = 0;
     for (auto* Light : AllPointLights)
     {
         if (ViewFrustum.IntersectsSphere(Light->GetComponentLocation(), Light->GetRadius()))
+        {
             VisiblePointLights.Add(Light);
+            //PointLightShadowMap Text 지정해야 함.
+            //VisiblePointLights[PointLightID]->ShadowSRVSlice = 
+            //    renderResourceManager->GetShadowMapSliceSRVs(TEXT("PointLightShadowMap"),PointLightID);
+        }
+        ++PointLightID;
     }
 
+    int SpotLightID = 0;
     for (auto* Light : AllSpotLights)
     {
         if (IsSpotLightInFrustum(Light, ViewFrustum))
+        {
             VisibleSpotLights.Add(Light);
+            VisibleSpotLights[SpotLightID]->ShadowSRVSlice =
+                renderResourceManager->GetShadowMapSliceSRVs(TEXT("SpotLightShadowMap"), SpotLightID);
+        }
+        ++SpotLightID;
     }
 }
 void FLightManager::UploadLightConstants()
