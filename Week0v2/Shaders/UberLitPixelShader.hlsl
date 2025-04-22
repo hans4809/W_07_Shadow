@@ -1,10 +1,9 @@
-#include "ShaderHeaders/GSamplers.hlsli"
 #include "ShaderHeaders/UberLitCommon.hlsli"
 
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
-Texture2DArray DirLightShadowMap : register(t3);
+Texture2DArray DirLightShadowMap : register(t7);
 
 StructuredBuffer<FLightVP> SpotVP : register(t3);
 StructuredBuffer<FLightVP> PointVP : register(t5);
@@ -112,6 +111,12 @@ PS_OUTPUT mainPS(PS_INPUT input)
     uint2 pixelCoord = uint2(input.position.xy);
     uint2 tileCoord = pixelCoord / tileSize; // 각 성분별 나눔
     uint tileIndex = tileCoord.x + tileCoord.y * numTilesX;
+    
+    if (!IsLit)
+    {
+        output.color = float4(baseColor.rgb, 1.0);
+        return output;
+    }
     
     float3 Normal = input.normal;
     

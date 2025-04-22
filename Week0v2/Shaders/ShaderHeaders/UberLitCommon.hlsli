@@ -1,6 +1,7 @@
 #ifndef UBERLITCOMMON_HLSLI
 #define UBERLITCOMMON_HLSLI
 
+#include "ShaderHeaders/GSamplers.hlsli"
 // ---------------------------------------------
 // 조명 구조체 정의
 // ---------------------------------------------
@@ -183,7 +184,6 @@ float3 CalculateSpotLight(
 
 Texture2DArray<float> SpotShadowMap : register(t4);
 TextureCubeArray<float> PointShadowMap : register(t6);
-SamplerComparisonState ShadowSampler : register(s4); // Shadow sampler
 
 float3 CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
 {
@@ -202,7 +202,7 @@ float3 CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index
     if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
         return 1.0;
 
-    return SpotShadowMap.SampleCmpLevelZero(ShadowSampler, float3(uv, index), z);
+    return SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(uv, index), z);
 }
 
 float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos, uint index)
@@ -216,7 +216,7 @@ float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos,
 
     float3 dir = normalize(LightToWorld);
 
-    return PointShadowMap.SampleCmpLevelZero(ShadowSampler, float4(dir, index), z);
+    return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z);
 }
 
 cbuffer FMaterialConstants : register(b0)

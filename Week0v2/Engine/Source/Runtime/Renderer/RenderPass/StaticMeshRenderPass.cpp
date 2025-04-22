@@ -28,22 +28,6 @@ extern UEditorEngine* GEngine;
 
 FStaticMeshRenderPass::FStaticMeshRenderPass(const FName& InShaderName) : FBaseRenderPass(InShaderName)
 {
-    //TODO Sampler ResourceManager로 옮기기.
-    const FGraphicsDevice& Graphics = GEngine->graphicDevice;
-    D3D11_SAMPLER_DESC desc = {};
-    desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT; //  Comparison 필터
-    desc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;  // 또는 BORDER
-    desc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-    desc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
-    desc.BorderColor[0] = 1.0f;
-    desc.BorderColor[1] = 1.0f;
-    desc.BorderColor[2] = 1.0f;
-    desc.BorderColor[3] = 1.0f;
-    desc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;  //  깊이 비교 함수 (일반적으로 LessEqual)
-    desc.MinLOD = 0;
-    desc.MaxLOD = 0;
-
-    HRESULT hr = Graphics.Device->CreateSamplerState(&desc, &shadowSampler);
 }
 
 void FStaticMeshRenderPass::AddRenderObjectsToRenderPass(UWorld* InWorld)
@@ -110,8 +94,6 @@ void FStaticMeshRenderPass::Prepare(const std::shared_ptr<FViewportClient> InVie
 
     ID3D11ShaderResourceView* PointShadowMap = renderResourceManager->GetShadowMapSRV(PointLightShadowMap);
     Graphics.DeviceContext->PSSetShaderResources(6, 1, &PointShadowMap);
-
-    Graphics.DeviceContext->PSSetSamplers(4, 1, &shadowSampler);
 }
 
 void FStaticMeshRenderPass::UpdateComputeResource()
@@ -147,7 +129,7 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
     UpdateCameraConstant(InViewportClient);
     
     // DirLight ShadowSRV
-    Graphics.DeviceContext->PSSetShaderResources(3, 1, &Graphics.DirShadowSRV);
+    Graphics.DeviceContext->PSSetShaderResources(7, 1, &Graphics.DirShadowSRV);
 
     for (UStaticMeshComponent* staticMeshComp : StaticMesheComponents)
     {
