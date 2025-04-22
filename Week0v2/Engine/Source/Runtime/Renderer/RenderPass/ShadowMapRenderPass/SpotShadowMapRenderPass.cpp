@@ -66,7 +66,7 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
 
     Graphics.DeviceContext->RSSetViewports(1, &shadowViewport);
 
-    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("SpotLightVPMat"));
+    ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(SpotLightVPMat);
     Graphics.DeviceContext->VSSetShaderResources(0, 1, &SBSRV);
 
     Graphics.DeviceContext->PSSetShader(nullptr, nullptr, 0);
