@@ -226,7 +226,8 @@ float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
             };
             if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
             {
-                Light += SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, index), z).r;
+                float bias = 0.001;
+                Light += SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, index), z - bias).r;
             }
             else
             {
@@ -238,6 +239,13 @@ float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
     return Light;
 }
 
+void GetTangentBasis(float3 dir, out float3 right, out float3 up)
+{
+    up    = abs(dir.y) < 0.99 ? float3(0,1,0) : float3(1,0,0);
+    right = normalize(cross(up, dir));
+    up    = normalize(cross(dir, right));
+}
+
 float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos, uint index)
 {
     float3 lightPos = Light.Position;
@@ -246,33 +254,32 @@ float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos,
     float4 lightSpace = mul(float4(PixelWorldPos, 1.0), light.LightVP);
     lightSpace.xyz /= lightSpace.w;
     float z = lightSpace.z;
-
+ 
     float3 dir = normalize(LightToWorld);
+
+    //float bias = 0.001; // 실험적으로 조정
+    //return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z - bias);
     
-    float bias = 0.005; // 실험적으로 조정
-    return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z - bias);
-    //
-    // // Percentage Closer Filtering
-    // float Light = 0.f;
-    // // TODO : 일단 하드 코딩 나중에 어떻게 잘 데이터 받게 수정
-    // float OffsetX = 1.f / 1024;
-    // float OffsetY = 1.f / 1024;
-    // for (int i = -1; i <= 1; i++)
-    // {
-    //     for (int j = -1; j <= 1; j++)
-    //     {
-    //         if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
-    //         {
-    //             Light += PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, index), z).r;
-    //         }
-    //         else
-    //         {
-    //             Light += 1.f;
-    //         }
-    //     }
-    // }
-    // Light /= 9;
-    // return Light;
+    float3 right, up;
+    GetTangentBasis(dir, right, up);
+    
+    // -1.5, -0.5, 0.5, 1.5
+    static const float Offset[4] = { -1.5, -0.5, 0.5, 1.5 };
+    // TODO : GetDimensiono
+    float texelSize = 1.0 / 1024;
+    float PCF = 0;
+    [unroll]
+    for (int y = 0; y < 4; ++y)
+    {
+        for (int x = 0; x < 4; ++x)
+        {
+            float2 o = float2(Offset[x], Offset[y]) * texelSize;
+            float3 sampleDir = normalize(dir + right * o.x + up * o.y);
+            float bias = 0.001;
+            PCF += PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(sampleDir, index), z - bias);
+        }
+    }
+    return PCF * (1.0 / 16.0);
 }
 
 cbuffer FMaterialConstants : register(b0)
