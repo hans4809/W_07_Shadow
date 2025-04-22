@@ -1,5 +1,7 @@
 #include "PropertyEditorPanel.h"
 
+#include "UnrealEngine.h"
+
 #include "Engine/World.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Math/MathUtility.h"
@@ -318,6 +320,8 @@ void PropertyEditorPanel::Render()
                 lightObj->SetColor(FVector4(r, g, b, a));
             }
 
+            FGraphicsDevice& Graphics = GEngine->graphicDevice;
+            ImGui::Image((ImTextureID)Graphics.DirShadowSRV, ImVec2(512, 512));
             // Light Radius
             //float radiusVal = lightObj->GetRadius();
             //if (ImGui::SliderFloat("Radius", &radiusVal, 1.0f, 100.0f))

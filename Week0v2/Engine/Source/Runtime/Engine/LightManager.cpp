@@ -77,6 +77,10 @@ void FLightManager::UploadLightConstants()
         Constants.DirLight.Color = DirectionalLight->GetLightColor();
         Constants.DirLight.Intensity = DirectionalLight->GetIntensity();
         Constants.DirLight.Direction = DirectionalLight->GetOwner()->GetActorForwardVector();
+        for (int i = 0; i < MAX_CASCADES; i++)
+            Constants.DirLight.ViewProjectionMatrix[i] = DirectionalLight->GetViewProjectionMatrix(i);
+        for (int i = 0; i < MAX_CASCADES + 1; i++)
+            Constants.DirLight.CascadeSplits[i] = DirectionalLight->GetCascadeSplits()[i];
     }
     if (AmbientLight)
     {

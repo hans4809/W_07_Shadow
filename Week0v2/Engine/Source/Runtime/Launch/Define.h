@@ -203,6 +203,7 @@ enum class ESamplerType
     Linear,
     Anisotropic,
     PostProcess,
+    LinearComparision,
     End,
 };
 
@@ -537,6 +538,9 @@ struct FDirectionalLight
 
     float Intensity;
     FVector Direction;
+    FMatrix ViewProjectionMatrix[MAX_CASCADES];
+    float CascadeSplits[MAX_CASCADES + 1]; // Cascade Split Depths
+    float pad[3];
 };
 
 struct FPointLight

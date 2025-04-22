@@ -146,6 +146,9 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
     
     UpdateCameraConstant(InViewportClient);
     
+    // DirLight ShadowSRV
+    Graphics.DeviceContext->PSSetShaderResources(3, 1, &Graphics.DirShadowSRV);
+
     for (UStaticMeshComponent* staticMeshComp : StaticMesheComponents)
     {
         const FMatrix Model = JungleMath::CreateModelMatrix(staticMeshComp->GetComponentLocation(), staticMeshComp->GetComponentRotation(),
@@ -207,6 +210,7 @@ void FStaticMeshRenderPass:: Execute(const std::shared_ptr<FViewportClient> InVi
 
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     Graphics.DeviceContext->PSSetShaderResources(2, 1, nullSRV); //쓰고 해제 나중에 이쁘게 뺴기
+    Graphics.DeviceContext->PSSetShaderResources(3, 1, nullSRV);
 }
 
 void FStaticMeshRenderPass::UpdateComputeConstants(const std::shared_ptr<FViewportClient> InViewportClient)
@@ -424,11 +428,11 @@ void FStaticMeshRenderPass::UpdateCameraConstant(const std::shared_ptr<FViewport
     const std::shared_ptr<FEditorViewportClient> curEditorViewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
 
     FCameraConstant CameraConstants;
-    CameraConstants.CameraForward = FVector::ZeroVector;
+    CameraConstants.CameraForward = curEditorViewportClient->ViewTransformPerspective.GetForwardVector();
     CameraConstants.CameraPos = curEditorViewportClient->ViewTransformPerspective.GetLocation();
-    CameraConstants.ViewProjMatrix = FMatrix::Identity;
-    CameraConstants.ProjMatrix = FMatrix::Identity;
-    CameraConstants.ViewMatrix = FMatrix::Identity;
+    CameraConstants.ViewMatrix = curEditorViewportClient->GetViewMatrix();
+    CameraConstants.ProjMatrix = curEditorViewportClient->GetProjectionMatrix();
+    CameraConstants.ViewProjMatrix = CameraConstants.ViewMatrix * CameraConstants.ProjMatrix;
     CameraConstants.NearPlane = curEditorViewportClient->GetNearClip();
     CameraConstants.FarPlane = curEditorViewportClient->GetFarClip();
 

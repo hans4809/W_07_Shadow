@@ -4,6 +4,7 @@
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
+Texture2DArray DirLightShadowMap : register(t3);
 
 StructuredBuffer<FLightVP> SpotVP : register(t3);
 StructuredBuffer<FLightVP> PointVP : register(t5);
@@ -112,12 +113,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     uint2 tileCoord = pixelCoord / tileSize; // 각 성분별 나눔
     uint tileIndex = tileCoord.x + tileCoord.y * numTilesX;
     
-    if(!IsLit)
-    {
-        output.color = float4(baseColor.rgb, 1.0);
-        return output;
-    }
-    
     float3 Normal = input.normal;
     
     if (bHasNormalTexture)
@@ -147,8 +142,36 @@ PS_OUTPUT mainPS(PS_INPUT input)
          TotalLight = TotalLight * 10.0f;
     TotalLight += EmissiveColor; // 자체 발광  
 
-    // 방향광 처리  s
-    TotalLight += CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
+    // 1. cascadeIndex 선택 (좌표계 일치 확인)
+    float4 viewPos = mul(float4(input.worldPos, 1.0), ViewMatrix);
+    float pixelDepth = viewPos.z;
+    
+    int cascadeIndex = 0;
+    if (pixelDepth > DirLight.CascadeSplits1)
+        cascadeIndex = 1;
+    if (pixelDepth > DirLight.CascadeSplits2)
+        cascadeIndex = 2;
+    if (pixelDepth > DirLight.CascadeSplits3)
+        cascadeIndex = 3;
+
+    // 2. Shadow Map 좌표 변환
+    float4 shadowCoord = mul(float4(input.worldPos, 1.0), DirLight.ViewProjectionMatrix[cascadeIndex]);
+    
+    float2 shadowUV =
+    {
+        0.5f + shadowCoord.x / shadowCoord.w / 2.f,
+        0.5f - shadowCoord.y / shadowCoord.w / 2.f
+    };
+
+    float shadowDepth = shadowCoord.z / shadowCoord.w;
+    
+    // 4. Shadow Map 샘플링
+    float bias = 0.005; // 실험적으로 조정
+    shadowDepth -= bias;
+    float mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(shadowUV, cascadeIndex), shadowDepth).r;
+    
+    // 방향광 처리
+    TotalLight += mapDepth * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
 
     // 점광 처리
     [loop]
