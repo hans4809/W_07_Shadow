@@ -21,6 +21,8 @@
 #include "Components/PrimitiveComponents/UTextComponent.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/CubeComp.h"
 
+#include "UnrealEd/EditorViewportClient.h"
+#include "LevelEditor/SLevelEditor.h"
 void PropertyEditorPanel::Render()
 {
     /* Pre Setup */
@@ -208,9 +210,77 @@ void PropertyEditorPanel::Render()
         ULightComponentBase* lightObj = PickedActor->GetComponentByClass<ULightComponentBase>();
         if (lightObj)
         {
-
             if (ImGui::Begin("ShadowMap View"))
             {
+                static int selectedSlice = 0;
+                static int selectedFace = 0;
+                static bool useLightView = false;
+                static FMatrix ViewClient, ProjectionClient;
+
+                std::shared_ptr<FEditorViewportClient> vp = GEngine->GetLevelEditor()->GetActiveViewportClient();
+
+                // Directional Light: 슬라이스 선택 UI
+                if (lightObj->IsA<UDirectionalLightComponent>()) {
+                    ImGui::Text("Directional Light Slices:");
+                    for (int i = 0; i < 4; ++i) {
+                        char label[32];
+                        sprintf_s(label, sizeof(label), "Slice %d", i);
+                        if (ImGui::RadioButton(label, selectedSlice == i)) {
+                            selectedSlice = i;
+                        }
+                    }
+                }
+
+                // Point Light: 페이스 선택 UI
+                if (lightObj->IsA<UPointLightComponent>()) {
+                    ImGui::Text("Point Light Faces:");
+                    const char* faces[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+                    for (int i = 0; i < 6; ++i) {
+                        if (ImGui::RadioButton(faces[i], selectedFace == i)) {
+                            selectedFace = i;
+                        }
+                    }
+                }
+
+                // 체크박스: 라이트 시점으로 전환/복귀
+                if (ImGui::Checkbox("View From Light", &useLightView)) {
+                    if (useLightView) {
+                        // ON: 현재 카메라 상태를 저장
+                        ViewClient = vp->GetViewMatrix();
+                        ProjectionClient = vp->GetProjectionMatrix();
+
+                        if (lightObj->IsA<UDirectionalLightComponent>()) {
+                            auto* DirLight = Cast<UDirectionalLightComponent>(lightObj);
+                            FMatrix lightView = DirLight->GetViewMatrix(selectedSlice);
+                            FMatrix lightProj = DirLight->GetProjectionMatrix(selectedSlice);
+                            vp->SetViewMatrix(lightView);
+                            vp->SetProjectionMatrix(lightProj);
+                            vp->bLightView = true;
+                        }
+                        else if (lightObj->IsA<USpotLightComponent>()) {
+                            auto* SpotLight = Cast<USpotLightComponent>(lightObj);
+                            FMatrix lightView = SpotLight->GetViewMatrix();
+                            FMatrix lightProj = SpotLight->GetProjectionMatrix();
+                            vp->SetViewMatrix(lightView);
+                            vp->SetProjectionMatrix(lightProj);
+                            vp->bLightView = true;
+                        }
+                        else if (lightObj->IsA<UPointLightComponent>()) {
+                            auto* PointLight = Cast<UPointLightComponent>(lightObj);
+                            FMatrix lightView = PointLight->GetViewMatrix(selectedFace);
+                            FMatrix lightProj = PointLight->GetProjectionMatrix(selectedFace);
+                            vp->SetViewMatrix(lightView);
+                            vp->SetProjectionMatrix(lightProj);
+                            vp->bLightView = true;
+                        }
+                    }
+                    else {
+                        // OFF: 이전 카메라 상태로 복귀
+                        vp->SetViewMatrix(ViewClient);
+                        vp->SetProjectionMatrix(ProjectionClient);
+                        vp->bLightView = false;
+                    }
+                }
 
                 TArray<ID3D11ShaderResourceView*> ShadowSRVSlice = lightObj->ShadowSRVSlice;
                 for (int i = 0; i < ShadowSRVSlice.Num(); i++)

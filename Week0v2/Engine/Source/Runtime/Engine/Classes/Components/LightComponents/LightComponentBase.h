@@ -64,6 +64,7 @@ public:
     FVector4 GetColor() const;
 
     TArray<ID3D11ShaderResourceView*> ShadowSRVSlice;
+    bool bOverrideCamera = false;
 protected:
     FVector4 LightColor = { 1, 1, 1, 1 }; // RGBA
     float Intensity = 1.0f;
