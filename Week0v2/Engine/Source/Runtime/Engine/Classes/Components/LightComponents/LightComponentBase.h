@@ -65,9 +65,9 @@ public:
 
     TArray<ID3D11ShaderResourceView*> ShadowSRVSlice;
 protected:
+    bool bCastShadows = true;
     FVector4 LightColor = { 1, 1, 1, 1 }; // RGBA
     float Intensity = 1.0f;
-    bool bCastShadows = false;
 
 public:
     FVector4 GetLightColor() const { return LightColor; }

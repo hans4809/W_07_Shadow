@@ -177,7 +177,6 @@ void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
 
         FLightVP GPULight;
         GPULight.LightVP = ComputeViewProj(LightComp);
-
         SpotLightViewProjMatrices.Add(GPULight);
     }
 

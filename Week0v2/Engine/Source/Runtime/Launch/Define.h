@@ -540,7 +540,8 @@ struct FDirectionalLight
     FVector Direction;
     FMatrix ViewProjectionMatrix[MAX_CASCADES];
     float CascadeSplits[MAX_CASCADES + 1]; // Cascade Split Depths
-    float pad[3];
+    bool bCastShadow;
+    float pad[2];
 };
 
 struct FPointLight
@@ -552,7 +553,8 @@ struct FPointLight
 
     float Radius;
     float AttenuationFalloff;
-    FVector2D Padd;
+    bool bCastShadow;
+    float pad;
 };
 struct FSpotLight
 {
@@ -567,7 +569,7 @@ struct FSpotLight
     float OuterAngle;
     float Radius;
     float AttenuationFalloff;
-    float pad;
+    bool bCastShadow;
 };
 
 struct FComputeConstants{

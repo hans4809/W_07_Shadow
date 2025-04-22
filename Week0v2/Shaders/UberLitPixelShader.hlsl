@@ -141,6 +141,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
          TotalLight = TotalLight * 10.0f;
     TotalLight += EmissiveColor; // 자체 발광  
 
+    if(DirLight.bCastShadow)
+    {
+        
     // 1. cascadeIndex 선택 (좌표계 일치 확인)
     float4 viewPos = mul(float4(input.worldPos, 1.0), ViewMatrix);
     float pixelDepth = viewPos.z;
@@ -171,7 +174,12 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     // 방향광 처리
     TotalLight += mapDepth * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb,SpecularScalar,SpecularColor);  
-
+        
+    }
+    else
+    {
+        TotalLight += CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+    }
     // 점광 처리
     [loop]
     for(uint j = 0; j < NumPointLights; ++j)
@@ -182,22 +190,30 @@ PS_OUTPUT mainPS(PS_INPUT input)
         // {
         //     break;
         // }
+        float shadow = 1.0f;
+        if(PointLights[j].bCastShadow)
+        {
+            
+            float3 L = input.worldPos - PointLights[j].Position;
+            float dist = length(L);
+            float3 dir = L / dist;
 
-        float3 L = input.worldPos - PointLights[j].Position;
-        float dist = length(L);
-        float3 dir = L/dist;
+            uint face = ComputeCubeface(dir);
+            uint pointVPIndex = j * 6 + face;
 
-        uint face = ComputeCubeface(dir);
-        uint pointVPIndex = j * 6 + face;
-
-        float shadow = SamplePointShadow(PointVP[pointVPIndex], PointLights[j], input.worldPos, j);
+            shadow = SamplePointShadow(PointVP[pointVPIndex], PointLights[j], input.worldPos, j);
+        }
         float3 light = CalculatePointLight(PointLights[j], input.worldPos, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
         TotalLight += shadow * light;
     }
     
     for (uint k = 0; k < NumSpotLights; ++k)
     {
-        float shadow = CalculateShadowSpotLight(SpotVP[k], input.worldPos,k);
+        float shadow = 1.0f;
+        if(SpotLights[k].bCastShadow)
+        {
+            shadow = CalculateShadowSpotLight(SpotVP[k], input.worldPos, k);
+        }
         float3 light = CalculateSpotLight(SpotLights[k], input.worldPos, input.normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
         TotalLight += shadow * light;
     }

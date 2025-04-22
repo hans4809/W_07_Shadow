@@ -35,6 +35,7 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
     VisiblePointLights.Empty();
     VisibleSpotLights.Empty();
 
+
     FRenderer& Renderer = GEngine->renderer;
     FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
     int PointLightID = 0;
@@ -95,6 +96,7 @@ void FLightManager::UploadLightConstants()
         Constants.PointLights[i].Position = L->GetComponentLocation();
         Constants.PointLights[i].Radius = L->GetRadius();
         Constants.PointLights[i].AttenuationFalloff = L->GetAttenuationFalloff();
+        Constants.PointLights[i].bCastShadow = L->CanCastShadows();
     }
 
     for (int i = 0; i < VisibleSpotLights.Num(); ++i)
@@ -108,6 +110,7 @@ void FLightManager::UploadLightConstants()
         Constants.SpotLights[i].OuterAngle = L->GetOuterConeAngle();
         Constants.SpotLights[i].Radius = L->GetRadius();
         Constants.SpotLights[i].AttenuationFalloff = L->GetAttenuationFalloff();
+        Constants.SpotLights[i].bCastShadow = L->CanCastShadows();
     }
     if (DirectionalLight)
     {
@@ -118,6 +121,7 @@ void FLightManager::UploadLightConstants()
             Constants.DirLight.ViewProjectionMatrix[i] = DirectionalLight->GetViewProjectionMatrix(i);
         for (int i = 0; i < MAX_CASCADES + 1; i++)
             Constants.DirLight.CascadeSplits[i] = DirectionalLight->GetCascadeSplits()[i];
+        Constants.DirLight.Intensity = DirectionalLight->CanCastShadows();
     }
     if (AmbientLight)
     {

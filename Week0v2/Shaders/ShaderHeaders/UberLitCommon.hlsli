@@ -37,7 +37,8 @@ struct FDirectionalLight
     float CascadeSplits2;
     float CascadeSplits3;
     float CascadeSplits4;
-    float3 pad;
+    bool bCastShadow;
+    float2 pad;
 };
 
 struct FPointLight
@@ -49,7 +50,8 @@ struct FPointLight
 
     float Radius;
     float AttenuationFalloff;
-    float2 pad;
+    bool bCastShadow;
+    float pad;
 };
 
 struct FSpotLight
@@ -65,7 +67,7 @@ struct FSpotLight
     float OuterAngle;
     float Radius;
     float AttenuationFalloff;
-    float pad;
+    bool bCastShadow;
 };
 
 struct FLightVP
