@@ -821,7 +821,7 @@ ID3D11DepthStencilView* FRenderResourceManager::CreateTexture2DArrayDSV(ID3D11Te
     return DSV;
 }
 
-ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension) const
+ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const
 {
     ID3D11ShaderResourceView* SRV = nullptr;
 
@@ -838,7 +838,7 @@ ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11
     return SRV;
 }
 
-TArray<ID3D11ShaderResourceView*> FRenderResourceManager::CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, uint32 SliceCount)
+TArray<ID3D11ShaderResourceView*> FRenderResourceManager::CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, const uint32 SliceCount) const
 {
     TArray<ID3D11ShaderResourceView*> SliceSRVs;
 
@@ -870,7 +870,6 @@ TArray<ID3D11ShaderResourceView*> FRenderResourceManager::CreateTexture2DArraySl
     return SliceSRVs;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
 ID3D11Texture2D* FRenderResourceManager::CreateTextureCube2DArray(const uint32 Width, const uint32 Height, const uint32 CubeCount) const
 {
     D3D11_TEXTURE2D_DESC td = {};

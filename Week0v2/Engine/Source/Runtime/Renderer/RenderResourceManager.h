@@ -126,10 +126,10 @@ public:
     void HotReloadShaders();
 public:
         //Create ShadowMap
-        ID3D11Texture2D* CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension);
-        ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
-        ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
-        TArray<ID3D11ShaderResourceView*> CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, uint32 SliceCount);
+        ID3D11Texture2D* CreateTexture2DArray(const uint32 Width, const uint32 Height, const uint32 ViewDimension) const;
+        ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
+        ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
+        TArray<ID3D11ShaderResourceView*> CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, const uint32 SliceCount) const;
 
         ID3D11Texture2D* CreateTextureCube2DArray(uint32 Width, uint32 Height, uint32 CubeCount) const;
         ID3D11DepthStencilView* CreateTextureCube2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
