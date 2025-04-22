@@ -161,9 +161,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
             break;
         }
 
-        float L = input.worldPos - PointLights[lightIndex].Position;
+        float3 L = input.worldPos - PointLights[lightIndex].Position;
         float dist = length(L);
-        float dir = L/dist;
+        float3 dir = L/dist;
 
         uint face = ComputeCubeface(dir);
         uint pointVPIndex = lightIndex * 6 + face;
