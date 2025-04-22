@@ -56,6 +56,8 @@ public:
     
     template <typename T>
     void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
+    template <typename T>
+    void UpdateStructuredBuffer(FName SBName, const TArray<T>& Data);
     
     ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
     ID3D11UnorderedAccessView* CreateBufferUAV(ID3D11Buffer* pBuffer, UINT numElements) const;
@@ -123,18 +125,23 @@ public:
 
     void HotReloadShaders();
 public:
-        //Create ShadowMap
-        ID3D11Texture2D* CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension);
-        ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
-        ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension);
-        //AddOrSet ShadowMap
-        void AddOrSetSRVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
-        void AddOrSetDSVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
-        void AddOrSetSRVShadowMapSRV(FName InSRVName, ID3D11ShaderResourceView* InShadowSRV);
-        void AddOrSetDSVShadowMapDSV(FName InDSVName, ID3D11DepthStencilView* InShadowDSV);
-        //Get ShadowMap
-        ID3D11ShaderResourceView* GetShadowMapSRV(const FName InName) const;
-        ID3D11DepthStencilView* GetShadowMapDSV(const FName InName) const;
+    //Create ShadowMap
+    ID3D11Texture2D* CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension) const;
+    ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension) const;
+    ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension) const;
+
+    ID3D11Texture2D* CreateTextureCube2DArray(uint32 Width, uint32 Height, uint32 CubeCount) const;
+    ID3D11DepthStencilView* CreateTextureCube2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
+    ID3D11ShaderResourceView* CreateTextureCube2DArraySRV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
+
+    //AddOrSet ShadowMap
+    void AddOrSetSRVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
+    void AddOrSetDSVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
+    void AddOrSetSRVShadowMapSRV(FName InSRVName, ID3D11ShaderResourceView* InShadowSRV);
+    void AddOrSetDSVShadowMapDSV(FName InDSVName, ID3D11DepthStencilView* InShadowDSV);
+    //Get ShadowMap
+    ID3D11ShaderResourceView* GetShadowMapSRV(const FName InName) const;
+    ID3D11DepthStencilView* GetShadowMapDSV(const FName InName) const;
 private:
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>> SRVShadowMap;
     TMap<FName, TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>> DSVShadowMap;
@@ -362,4 +369,18 @@ void FRenderResourceManager::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const
     }
 
     GraphicDevice->DeviceContext->Unmap(pBuffer, 0);
+}
+
+template <typename T>
+void FRenderResourceManager::UpdateStructuredBuffer(const FName SBName, const TArray<T>& Data)
+{
+    ID3D11Buffer* SB = GetSRVStructuredBuffer(SBName);
+
+    if (SB == nullptr)
+    {
+        UE_LOG(LogLevel::Error, TEXT("UpdateStructuredBuffer 호출: 키 %s에 해당하는 buffer가 없습니다."), SBName);
+        return;
+    }
+    
+    UpdateStructuredBuffer(SB, Data);
 }

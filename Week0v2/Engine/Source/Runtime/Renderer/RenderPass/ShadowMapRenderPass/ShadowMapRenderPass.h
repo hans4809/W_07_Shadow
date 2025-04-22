@@ -38,6 +38,11 @@ protected:
         FMatrix ModelMatrix;
         uint32  NumPoints;
     };
+    
+    struct FLightVP
+    {
+        FMatrix LightVP;
+    };
 
     TArray<UStaticMeshComponent*> StaticMeshComponents;
 };

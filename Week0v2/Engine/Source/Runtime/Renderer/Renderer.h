@@ -60,6 +60,7 @@ public:
     static D3D_SHADER_MACRO EditorIconDefines[];
     static D3D_SHADER_MACRO DirectionalDefines[];
     static D3D_SHADER_MACRO SpotLightDefines[];
+    static D3D_SHADER_MACRO PointLightDefines[];
     
     //Release
     void Release();

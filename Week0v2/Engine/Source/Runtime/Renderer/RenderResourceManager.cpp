@@ -764,7 +764,7 @@ void FRenderResourceManager::HotReloadShaders()
 }
 
 
-ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(uint32 Width, uint32 Height, uint32 ViewDimension)
+ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(const uint32 Width, const uint32 Height, const uint32 ViewDimension) const
 {
     D3D11_TEXTURE2D_DESC texDesc = {};
     texDesc.Width = Width;
@@ -788,7 +788,7 @@ ID3D11Texture2D* FRenderResourceManager::CreateTexture2DArray(uint32 Width, uint
     return textureArray;
 }
 
-ID3D11DepthStencilView* FRenderResourceManager::CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 ViewDimension)
+ID3D11DepthStencilView* FRenderResourceManager::CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const
 {
     ID3D11DepthStencilView* DSV = nullptr;
 
@@ -804,7 +804,7 @@ ID3D11DepthStencilView* FRenderResourceManager::CreateTexture2DArrayDSV(ID3D11Te
     return DSV;
 }
 
-ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension)
+ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, uint32 ViewDimension) const
 {
     ID3D11ShaderResourceView* SRV = nullptr;
 
@@ -821,7 +821,57 @@ ID3D11ShaderResourceView* FRenderResourceManager::CreateTexture2DArraySRV(ID3D11
     return SRV;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+ID3D11Texture2D* FRenderResourceManager::CreateTextureCube2DArray(const uint32 Width, const uint32 Height, const uint32 CubeCount) const
+{
+    D3D11_TEXTURE2D_DESC td = {};
+    td.Width            = Width;
+    td.Height           = Height;
+    td.MipLevels        = 1;
+    td.ArraySize        = CubeCount * 6;               // 6 faces per cube
+    td.Format           = DXGI_FORMAT_R32_TYPELESS;
+    td.SampleDesc.Count = 1;
+    td.Usage            = D3D11_USAGE_DEFAULT;
+    td.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+    td.MiscFlags        = D3D11_RESOURCE_MISC_TEXTURECUBE; 
+
+    ID3D11Texture2D* tex = nullptr;
+    GraphicDevice->Device->CreateTexture2D(&td, nullptr, &tex);
+    return tex;
+}
+
+ID3D11DepthStencilView* FRenderResourceManager::CreateTextureCube2DArrayDSV(ID3D11Texture2D* TextureArray, const uint32 CubeCount) const
+{
+    ID3D11DepthStencilView* DSV = nullptr;
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};         
+    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+    dsvDesc.Texture2DArray.MipSlice = 0;
+    dsvDesc.Texture2DArray.FirstArraySlice = 0;
+    dsvDesc.Texture2DArray.ArraySize = CubeCount * 6;
+
+    GraphicDevice->Device->CreateDepthStencilView(TextureArray, &dsvDesc, &DSV);
+
+    return DSV;
+}
+
+ID3D11ShaderResourceView* FRenderResourceManager::CreateTextureCube2DArraySRV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const
+{
+    D3D11_SHADER_RESOURCE_VIEW_DESC sd = {};
+    sd.Format                          = DXGI_FORMAT_R32_FLOAT;
+    sd.ViewDimension                   = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;  // ← 이걸로
+    sd.TextureCubeArray.MostDetailedMip = 0;
+    sd.TextureCubeArray.MipLevels       = 1;
+    sd.TextureCubeArray.First2DArrayFace = 0;
+    sd.TextureCubeArray.NumCubes         = CubeCount;  // 큐브맵 개수
+
+    ID3D11ShaderResourceView* srv = nullptr;
+    HRESULT hr = GraphicDevice->Device->CreateShaderResourceView(TextureArray, &sd, &srv);
+    assert(SUCCEEDED(hr));
+    return srv;
+}
+
+void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(const FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
 {
     if (SRVShadowMap.Contains(InShadowMapName) == false)
     {
@@ -835,7 +885,7 @@ void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(FName InShadowMapName, 
     SRVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
 }
 
-void FRenderResourceManager::AddOrSetDSVShadowMapTexutre(FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+void FRenderResourceManager::AddOrSetDSVShadowMapTexutre(const FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
 {
     if (DSVShadowMap.Contains(InShadowMapName) == false)
     {
@@ -849,7 +899,7 @@ void FRenderResourceManager::AddOrSetDSVShadowMapTexutre(FName InShadowMapName, 
     DSVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapSRV(FName InShadowMapName, ID3D11ShaderResourceView* InShadowSRV)
+void FRenderResourceManager::AddOrSetSRVShadowMapSRV(const FName InShadowMapName, ID3D11ShaderResourceView* InShadowSRV)
 {
     if (SRVShadowMap.Contains(InShadowMapName) == false)
     {
@@ -863,7 +913,7 @@ void FRenderResourceManager::AddOrSetSRVShadowMapSRV(FName InShadowMapName, ID3D
     SRVShadowMap[InShadowMapName].Value = InShadowSRV;
 }
 
-void FRenderResourceManager::AddOrSetDSVShadowMapDSV(FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
+void FRenderResourceManager::AddOrSetDSVShadowMapDSV(const FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
 {
     if (DSVShadowMap.Contains(InShadowMapName) == false)
     {

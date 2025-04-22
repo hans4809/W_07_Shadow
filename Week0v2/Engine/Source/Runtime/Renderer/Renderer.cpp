@@ -56,6 +56,12 @@ D3D_SHADER_MACRO FRenderer::SpotLightDefines[] =
     {nullptr, nullptr}
 };
 
+D3D_SHADER_MACRO FRenderer::PointLightDefines[] =
+{
+    {"POINT_LIGHT", "1"},
+    {nullptr, nullptr}
+};
+
 
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -67,13 +73,6 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     //CreateComputeShader();
     CreateComputeShader(TEXT("TileLightCulling"), nullptr);
     ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
-    
-    D3D_SHADER_MACRO defines[] = 
-    {
-        {"LIGHTING_MODEL_GOURAUD", "1"},
-        {nullptr, nullptr}
-    };
-    //SetViewMode(VMI_Lit_Phong);
     
     CreateVertexPixelShader(TEXT("UberLit"), GouradDefines);
     FString GouradShaderName = TEXT("UberLit");
@@ -119,6 +118,11 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexPixelShader(TEXT("ShadowMap"), SpotLightDefines);
     SpotShadowMapRenderPass = std::make_shared<FSpotShadowMapRenderPass>(SpotShadowMapName);
 
+    FString PointShadowMapName = TEXT("ShadowMap");
+    PointShadowMapName += PointLightDefines->Name;
+    CreateVertexPixelShader(TEXT("ShadowMap"), PointLightDefines);
+    CreateGeometryShader(TEXT("ShadowMap"), PointLightDefines);
+    PointShadowMapRenderPass = std::make_shared<FPointShadowMapRenderPass>(PointShadowMapName);
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -402,6 +406,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 void FRenderer::ClearRenderObjects() const
 {
     DirectionalShadowMapRenderPass->ClearRenderObjects();
+    PointShadowMapRenderPass->ClearRenderObjects();
     SpotShadowMapRenderPass->ClearRenderObjects();
     GoroudRenderPass->ClearRenderObjects();
     LambertRenderPass->ClearRenderObjects();
@@ -480,7 +485,9 @@ void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_
 
     DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
-    if (SpotShadowMapRenderPass) SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
+    PointShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
+
+    SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     if (CurrentViewMode == VMI_Lit_Goroud)
     {

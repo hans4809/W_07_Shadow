@@ -72,7 +72,8 @@ void FLightManager::UploadLightConstants()
         Constants.SpotLights[i].Radius = L->GetRadius();
         Constants.SpotLights[i].AttenuationFalloff = L->GetAttenuationFalloff();
     }
-    if (DirectionalLight) {
+    if (DirectionalLight)
+    {
         Constants.DirLight.Color = DirectionalLight->GetLightColor();
         Constants.DirLight.Intensity = DirectionalLight->GetIntensity();
         Constants.DirLight.Direction = DirectionalLight->GetOwner()->GetActorForwardVector();

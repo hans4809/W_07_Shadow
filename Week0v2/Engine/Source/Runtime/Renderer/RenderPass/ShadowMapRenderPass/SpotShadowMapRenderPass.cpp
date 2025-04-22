@@ -63,7 +63,7 @@ void FSpotShadowMapRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpo
     Graphics.DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
     
     ID3D11DepthStencilView* ShadowMapDSVArray =
-        renderResourceManager->GetShadowMapDSV(ShadowMap);
+        renderResourceManager->GetShadowMapDSV(SpotLightShadowMap);
     Graphics.DeviceContext->ClearDepthStencilView(ShadowMapDSVArray, D3D11_CLEAR_DEPTH, 1, 0);
     Graphics.DeviceContext->OMSetRenderTargets(0, nullptr, ShadowMapDSVArray);
 }
@@ -135,10 +135,10 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
     ID3D11ShaderResourceView* ShadowMapSRVArray =
         renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
 
-    renderResourceManager->AddOrSetSRVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetSRVShadowMapSRV(ShadowMap, ShadowMapSRVArray);
-    renderResourceManager->AddOrSetDSVShadowMapTexutre(ShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetDSVShadowMapDSV(ShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetSRVShadowMapSRV(SpotLightShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetDSVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetDSVShadowMapDSV(SpotLightShadowMap, ShadowMapDSVArray);
 }
 
 void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer()
