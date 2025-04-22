@@ -178,9 +178,12 @@ void FPointShadowMapRenderPass::CreateShadowMapResource() const
     ID3D11Texture2D* ShadowMapTextureCube2DArray = renderResourceManager->CreateTextureCube2DArray(MapWidth, MapHeight, MAX_POINT_LIGHTS);
     ID3D11DepthStencilView* ShadowMapDSVArray = renderResourceManager->CreateTextureCube2DArrayDSV(ShadowMapTextureCube2DArray, MAX_POINT_LIGHTS);
     ID3D11ShaderResourceView* ShadowMapSRVArray = renderResourceManager->CreateTextureCube2DArraySRV(ShadowMapTextureCube2DArray, MAX_POINT_LIGHTS) ;
+    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
+        renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTextureCube2DArray, MAX_POINT_LIGHTS);
 
     renderResourceManager->AddOrSetSRVShadowMapTexutre(PointLightShadowMap, ShadowMapTextureCube2DArray);
     renderResourceManager->AddOrSetSRVShadowMapSRV(PointLightShadowMap, ShadowMapSRVArray);
     renderResourceManager->AddOrSetDSVShadowMapTexutre(PointLightShadowMap, ShadowMapTextureCube2DArray);
     renderResourceManager->AddOrSetDSVShadowMapDSV(PointLightShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetSRVShadowMapSlice(PointLightShadowMap, Texture2DArraySliceSRVs);
 }

@@ -63,7 +63,7 @@ public:
     void SetColor(FVector4 newColor);
     FVector4 GetColor() const;
 
-    ID3D11ShaderResourceView* ShadowSRVSlice;
+    TArray<ID3D11ShaderResourceView*> ShadowSRVSlice;
 protected:
     FVector4 LightColor = { 1, 1, 1, 1 }; // RGBA
     float Intensity = 1.0f;

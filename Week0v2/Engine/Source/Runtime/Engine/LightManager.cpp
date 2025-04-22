@@ -8,6 +8,7 @@
 #include "UnrealEd/PrimitiveBatch.h"
 #include "Components/LightComponents/PointLightComponent.h"
 #include "Components/LightComponents/SpotLightComponent.h"
+#include "Components/LightComponents/DirectionalLightComponent.h"
 void FLightManager::CollectLights(UWorld* InWorld)
 {
     AllPointLights.Empty();
@@ -42,9 +43,15 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
         if (ViewFrustum.IntersectsSphere(Light->GetComponentLocation(), Light->GetRadius()))
         {
             VisiblePointLights.Add(Light);
-            //PointLightShadowMap Text 지정해야 함.
-            //VisiblePointLights[PointLightID]->ShadowSRVSlice = 
-            //    renderResourceManager->GetShadowMapSliceSRVs(TEXT("PointLightShadowMap"),PointLightID);
+
+            Light->ShadowSRVSlice.Empty();
+            for (int i = 0; i < 6; i++)
+            {
+                Light->ShadowSRVSlice.Add(
+                    renderResourceManager->GetShadowMapSliceSRVs(TEXT("PointLightShadowMap"), 
+                        PointLightID*6+i)
+                );
+            }
         }
         ++PointLightID;
     }
@@ -55,10 +62,24 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
         if (IsSpotLightInFrustum(Light, ViewFrustum))
         {
             VisibleSpotLights.Add(Light);
-            VisibleSpotLights[SpotLightID]->ShadowSRVSlice =
-                renderResourceManager->GetShadowMapSliceSRVs(TEXT("SpotLightShadowMap"), SpotLightID);
+
+            Light->ShadowSRVSlice.Empty();
+            Light->ShadowSRVSlice.Add(
+                renderResourceManager->GetShadowMapSliceSRVs(TEXT("SpotLightShadowMap"), SpotLightID)
+            );
         }
         ++SpotLightID;
+    }
+
+    if (DirectionalLight)
+    {
+        DirectionalLight->ShadowSRVSlice.Empty();
+        for (int i = 0; i < MAX_CASCADES; i++)
+        {
+            DirectionalLight->ShadowSRVSlice.Add(
+                renderResourceManager->GetShadowMapSliceSRVs(TEXT("DirLightShadowMap"), i)
+            );
+        }
     }
 }
 void FLightManager::UploadLightConstants()

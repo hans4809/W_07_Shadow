@@ -259,6 +259,18 @@ void PropertyEditorPanel::Render()
     if (PickedActor && PickedComponent && PickedComponent->IsA<ULightComponentBase>())
     {
         ULightComponentBase* lightObj = Cast<ULightComponentBase>(PickedComponent);
+
+        if (ImGui::Begin("ShadowMap View"))
+        {
+
+            TArray<ID3D11ShaderResourceView*> ShadowSRVSlice = lightObj->ShadowSRVSlice;
+            for (int i = 0; i < ShadowSRVSlice.Num(); i++)
+            {
+                ImGui::Image(reinterpret_cast<ImTextureID>(ShadowSRVSlice[i]), ImVec2(512, 512));
+            }
+        }
+        ImGui::End();
+
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
         if (ImGui::TreeNodeEx("Light Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
         {
@@ -340,6 +352,7 @@ void PropertyEditorPanel::Render()
         }
         ImGui::Spacing();
 
+        
         if (PickedComponent->IsA<UDirectionalLightComponent>())
         {
             // direction
@@ -390,7 +403,6 @@ void PropertyEditorPanel::Render()
                 {
                     SpotLight->SetAttenuationFallOff(falloffVal);
                 }
-                ImGui::Image(reinterpret_cast<ImTextureID>(SpotLight->ShadowSRVSlice), ImVec2(PanelWidth, PanelWidth));
                 ImGui::Spacing();
             }
         }
