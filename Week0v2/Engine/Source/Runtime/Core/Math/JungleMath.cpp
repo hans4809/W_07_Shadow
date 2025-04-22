@@ -157,34 +157,57 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     TArray<FVector> corners;
     GetFrustumCornersWS(InCamView, InCamProj, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
 
-    // 2) 슬라이스 중심
-    FVector center(0,0,0);
-    for (auto& c : corners) center += c;
-    center = center / corners.Num();
 
+
+    // 2. 코너들을 이용해 World-space AABB를 계산합니다.
+    FVector worldMins(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector worldMaxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (auto& c : corners)
+    {
+        worldMins.x = FMath::Min(worldMins.x, c.x);
+        worldMins.y = FMath::Min(worldMins.y, c.y);
+        worldMins.z = FMath::Min(worldMins.z, c.z);
+        worldMaxs.x = FMath::Max(worldMaxs.x, c.x);
+        worldMaxs.y = FMath::Max(worldMaxs.y, c.y);
+        worldMaxs.z = FMath::Max(worldMaxs.z, c.z);
+    }
+    // AABB의 중심 (이 값을 기준으로 Light View의 eye와 target을 결정)
+    FVector center = (worldMins + worldMaxs) * 0.5f;
+
+    // 3. World-space AABB의 8개 코너(재구성한 AABB의 코너)를 만듭니다.
+    TArray<FVector> aabbCorners;
+    aabbCorners.Add(FVector(worldMins.x, worldMins.y, worldMins.z));
+    aabbCorners.Add(FVector(worldMaxs.x, worldMaxs.y, worldMins.z));
+    aabbCorners.Add(FVector(worldMins.x, worldMaxs.y, worldMins.z));
+    aabbCorners.Add(FVector(worldMins.x, worldMins.y, worldMaxs.z));
+    aabbCorners.Add(FVector(worldMaxs.x, worldMins.y, worldMins.z));
+    aabbCorners.Add(FVector(worldMaxs.x, worldMins.y, worldMaxs.z));
+    aabbCorners.Add(FVector(worldMaxs.x, worldMaxs.y, worldMaxs.z));
+    aabbCorners.Add(FVector(worldMins.x, worldMaxs.y, worldMaxs.z));
+                                                                  
     // 3) Light View 계산 (up은 Y축)
     const FVector eye = center - InLightDir.Normalize() * 1000.0f;
     OutLightView = CreateViewMatrix(eye, center, FVector(0,0,1));
 
-    // 4) Light Space에서 AABB 구하기
-    FVector mins( FLT_MAX,  FLT_MAX,  FLT_MAX );
-    FVector maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX );
-    for (auto& c : corners)
+    // 3) Light View 공간에서 AABB 재계산하여 직교 투영()
+    FVector lightMins(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector lightMaxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (int i = 0; i < 8; i++)
     {
-        FVector ls = OutLightView.TransformPosition(c);
-        mins.x = FMath::Min(mins.x, ls.x);
-        mins.y = FMath::Min(mins.y, ls.y);
-        mins.z = FMath::Min(mins.z, ls.z);
-        maxs.x = FMath::Max(maxs.x, ls.x);
-        maxs.y = FMath::Max(maxs.y, ls.y);
-        maxs.z = FMath::Max(maxs.z, ls.z);
+        FVector ls = OutLightView.TransformPosition(aabbCorners[i]);
+        lightMins.x = FMath::Min(lightMins.x, ls.x);
+        lightMins.y = FMath::Min(lightMins.y, ls.y);
+        lightMins.z = FMath::Min(lightMins.z, ls.z);
+        lightMaxs.x = FMath::Max(lightMaxs.x, ls.x);
+        lightMaxs.y = FMath::Max(lightMaxs.y, ls.y);
+        lightMaxs.z = FMath::Max(lightMaxs.z, ls.z);
     }
 
-    // 5) 직교 투영: 중심을 0,0으로 맞추기 위해 width/height는 extents*2
-    float width  = (maxs.x - mins.x);
-    float height = (maxs.y - mins.y);
-    float nearZ  = mins.z;
-    float farZ   = maxs.z;
+    // 6. Light Space AABB로부터 Orthographic Projection 매개변수 결정
+    float width = lightMaxs.x - lightMins.x;
+    float height = lightMaxs.y - lightMins.y;
+    float nearZ = lightMins.z;
+    float farZ = lightMaxs.z;
 
     width = FMath::Max(width, 10.0f);
     height = FMath::Max(height, 10.0f);
