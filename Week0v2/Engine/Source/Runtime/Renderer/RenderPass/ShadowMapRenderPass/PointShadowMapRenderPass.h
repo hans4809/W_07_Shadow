@@ -17,7 +17,7 @@ private:
     void CreateShadowMapResource() const;
     static TArray<FMatrix> GetLightViewProjectionMatrix(const UPointLightComponent* LightComp);
     
-    const uint32 MapWidth = 512;
-    const uint32 MapHeight = 512;
+    const uint32 MapWidth = 1024;
+    const uint32 MapHeight = 1024;
     const FName PointLightShadowMap = TEXT("PointLightShadowMap");
 };

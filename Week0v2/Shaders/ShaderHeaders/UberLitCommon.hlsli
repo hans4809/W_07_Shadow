@@ -185,8 +185,14 @@ float3 CalculateSpotLight(
 Texture2DArray<float> SpotShadowMap : register(t4);
 TextureCubeArray<float> PointShadowMap : register(t6);
 
-float3 CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
+bool InRange(float val, float min, float max)
 {
+    return (min <= val && val <= max);
+}
+
+float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
+{
+    float bias = 0.001f;
     //float4 lightSpace = mul(light.LightVP, float4(worldPos, 1.0));
     float4 lightSpace = mul(float4(PixelWorldPos, 1.0), light.LightVP);
     lightSpace.xyz /= lightSpace.w;
@@ -196,13 +202,40 @@ float3 CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index
         0.5f + lightSpace.x * 0.5f,
         0.5f - lightSpace.y * 0.5f
     };
-    //float z = lightSpace.z * 0.5 + 0.5;
     float z = lightSpace.z;
+    z -= bias;
 
     if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
         return 1.0;
 
-    return SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(uv, index), z);
+    //return SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(uv, index), z);
+    //
+    // // Percentage Closer Filtering
+    float Light = 0.f;
+    // TODO : 일단 하드 코딩 나중에 어떻게 잘 데이터 받게 수정
+    float OffsetX = 1.f / 1024;
+    float OffsetY = 1.f / 1024;
+    for (int i = -1; i <= 1; i++)
+    {
+        for (int j = -1; j <= 1; j++)
+        {
+            float2 SampleCoord =
+            {
+                uv.x + OffsetX * i,
+                uv.y + OffsetY * j
+            };
+            if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
+            {
+                Light += SpotShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, index), z).r;
+            }
+            else
+            {
+                Light += 1.f;
+            }
+        }
+    }
+    Light /= 9;
+    return Light;
 }
 
 float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos, uint index)
@@ -218,6 +251,28 @@ float SamplePointShadow(FLightVP light, FPointLight Light, float3 PixelWorldPos,
     
     float bias = 0.005; // 실험적으로 조정
     return PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float4(dir, index), z - bias);
+    //
+    // // Percentage Closer Filtering
+    // float Light = 0.f;
+    // // TODO : 일단 하드 코딩 나중에 어떻게 잘 데이터 받게 수정
+    // float OffsetX = 1.f / 1024;
+    // float OffsetY = 1.f / 1024;
+    // for (int i = -1; i <= 1; i++)
+    // {
+    //     for (int j = -1; j <= 1; j++)
+    //     {
+    //         if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
+    //         {
+    //             Light += PointShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, index), z).r;
+    //         }
+    //         else
+    //         {
+    //             Light += 1.f;
+    //         }
+    //     }
+    // }
+    // Light /= 9;
+    // return Light;
 }
 
 cbuffer FMaterialConstants : register(b0)
@@ -293,4 +348,5 @@ cbuffer FMatrixConstants : register(b7)
     bool isSelected;
     float3 pad0;
 };
+
 #endif
