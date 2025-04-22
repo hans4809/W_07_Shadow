@@ -38,9 +38,9 @@ struct FPointLightComponentInfo : public FLightComponentInfo
     }
 };
 
-class UPointLightComponent : public ULightComponentBase
+class UPointLightComponent : public ULightComponent
 {
-    DECLARE_CLASS(UPointLightComponent, ULightComponentBase)
+    DECLARE_CLASS(UPointLightComponent, ULightComponent)
 public:
     UPointLightComponent();
     UPointLightComponent(const UPointLightComponent& Other);
