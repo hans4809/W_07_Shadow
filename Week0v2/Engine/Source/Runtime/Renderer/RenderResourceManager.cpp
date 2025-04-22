@@ -976,7 +976,7 @@ void FRenderResourceManager::AddOrSetDSVShadowMapDSV(const FName InShadowMapName
     DSVShadowMap[InShadowMapName].Value = InShadowDSV;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D11ShaderResourceView*> InShadowSliceSRVs)
+void FRenderResourceManager::AddOrSetSRVShadowMapSlice(const FName InName, const TArray<ID3D11ShaderResourceView*>& InShadowSliceSRVs)
 {
     if (SRVShadowMapSlice.Contains(InName))
     {
@@ -1012,7 +1012,7 @@ ID3D11DepthStencilView* FRenderResourceManager::GetShadowMapDSV(const FName InNa
     return nullptr;
 }
 
-ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, int index) const
+ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, const int index) const
 {
     if (SRVShadowMapSlice.Contains(InName))
     {

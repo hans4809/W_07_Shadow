@@ -92,6 +92,8 @@ void ControlEditorPanel::Render()
     CreateSRTButton(IconSize);
     ImGui::PopFont();
 
+    CreateLightStats();
+
     ImGui::End();
 }
 
@@ -469,10 +471,10 @@ void ControlEditorPanel::CreateFlagButton() const
     {
         for (int i = 0; i < IM_ARRAYSIZE(ViewTypeNames); i++)
         {
-            bool bIsSelected = ((int)ActiveViewport->GetViewportType() == i);
+            const bool bIsSelected = (static_cast<int>(ActiveViewport->GetViewportType()) == i);
             if (ImGui::Selectable(ViewTypeNames[i], bIsSelected))
             {
-                ActiveViewport->SetViewportType((ELevelViewportType)i);
+                ActiveViewport->SetViewportType(static_cast<ELevelViewportType>(i));
             }
 
             if (bIsSelected)
@@ -520,8 +522,8 @@ void ControlEditorPanel::CreateFlagButton() const
         ImGui::OpenPopup("ShowControl");
     }
 
-    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog" };
-    uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
+    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "LightStats" };
+    const uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
 
     if (ImGui::BeginPopup("ShowControl"))
     {
@@ -532,6 +534,7 @@ void ControlEditorPanel::CreateFlagButton() const
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_UUIDText)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) != 0,
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_LightStats)) != 0,
         };  // 각 항목의 체크 상태 저장
 
         for (int i = 0; i < IM_ARRAYSIZE(items); i++)
@@ -543,7 +546,7 @@ void ControlEditorPanel::CreateFlagButton() const
     }
 }
 
-void ControlEditorPanel::CreateShaderHotReloadButton(const ImVec2 ButtonSize) const
+void ControlEditorPanel::CreateShaderHotReloadButton(const ImVec2 ButtonSize)
 {
     ID3D11ShaderResourceView* IconTextureSRV = GEngine->resourceMgr.GetTexture(L"Assets/Texture/HotReload.png")->TextureSRV;
     const ImTextureID textureID = reinterpret_cast<ImTextureID>(IconTextureSRV); // 실제 사용되는 텍스처 SRV
@@ -660,6 +663,38 @@ void ControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
     }
 }
 
+void ControlEditorPanel::CreateLightStats()
+{
+    auto ActiveViewport = GEngine->GetLevelEditor()->GetActiveViewportClient();
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_LightStats))
+    {
+        if (ImGui::Begin("Light Stats", nullptr))
+        {
+            FLightManager* lightManager = GEngine->renderer.LightManager;
+            const int AmbientLightNum = lightManager->GetAmbientLightNum();
+            const int DirectionalLightNum = lightManager->GetDirectionalLightNum();
+            const int PointLightNum = lightManager->GetPointLightNum();
+            const int SpotLightNum = lightManager->GetSpotLightNum();
+            const int TotalNum    = AmbientLightNum + DirectionalLightNum + PointLightNum + SpotLightNum;
+
+            ImGui::Text("Ambient Lights     : %d", AmbientLightNum);
+            ImGui::Text("Directional Lights : %d", DirectionalLightNum);
+            ImGui::Text("Point Lights       : %d", PointLightNum);
+            ImGui::Text("Spot Lights        : %d", SpotLightNum);
+            ImGui::Separator();
+            ImGui::Text("Total Lights       : %d", TotalNum);
+            // 창 우측 상단 닫기 버튼 누르면 비트 끄기
+            if (ImGui::Button("Close"))
+            {
+                uint64 f = ActiveViewport->GetShowFlag();
+                f &= ~static_cast<uint64>(EEngineShowFlags::SF_LightStats);
+                ActiveViewport->SetShowFlag(f);
+            }
+        }
+        ImGui::End();
+    }
+}
+
 uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
 {
     uint64 flags = static_cast<uint64>(EEngineShowFlags::None);
@@ -674,6 +709,8 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
         flags |= static_cast<uint64>(EEngineShowFlags::SF_UUIDText);
     if (selected[4])
         flags |= static_cast<uint64>(EEngineShowFlags::SF_Fog);
+    if (selected[5])
+        flags |= static_cast<uint64>(EEngineShowFlags::SF_LightStats);
     return flags;
 }
 

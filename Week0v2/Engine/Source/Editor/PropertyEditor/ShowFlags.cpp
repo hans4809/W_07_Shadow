@@ -18,11 +18,11 @@ ShowFlags& ShowFlags::GetInstance()
 
 void ShowFlags::Draw(std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-	float controllWindowWidth = static_cast<float>(width) * 0.12f;
-	float controllWindowHeight = static_cast<float>(height) * 0.f;
+	const float controllWindowWidth = static_cast<float>(width) * 0.12f;
+	const float controllWindowHeight = static_cast<float>(height) * 0.f;
 
-	float controllWindowPosX = (static_cast<float>(width) - controllWindowWidth) * 0.64f;
-	float controllWindowPosY = (static_cast<float>(height) - controllWindowHeight) * 0.f;
+	const float controllWindowPosX = (static_cast<float>(width) - controllWindowWidth) * 0.64f;
+	const float controllWindowPosY = (static_cast<float>(height) - controllWindowHeight) * 0.f;
 
 	// 창 크기와 위치 설정
 	ImGui::SetNextWindowPos(ImVec2(controllWindowPosX, controllWindowPosY));
@@ -30,13 +30,16 @@ void ShowFlags::Draw(std::shared_ptr<FEditorViewportClient> ActiveViewport)
 
 	if (ImGui::Begin("ShowFlags"))
 	{
-		const char* items[] = { "AABB", "Primitves","BillBoardText","UUID", "Fog"};
-        uint64 curFlag = ActiveViewport->GetShowFlag();
-		bool selected[IM_ARRAYSIZE(items)] = { curFlag & static_cast<uint64>(EEngineShowFlags::SF_AABB),
-            curFlag& static_cast<uint64>(EEngineShowFlags::SF_Primitives),
-            curFlag& static_cast<uint64>(EEngineShowFlags::SF_BillboardText),
-            curFlag& static_cast<uint64>(EEngineShowFlags::SF_UUIDText),
-            curFlag& static_cast<uint64>(EEngineShowFlags::SF_Fog)
+		const char* items[] = { "AABB", "Primitves","BillBoardText","UUID", "Fog", "LightStats" };
+        const uint64 curFlag = ActiveViewport->GetShowFlag();
+		bool selected[IM_ARRAYSIZE(items)] =
+		{
+		    curFlag & static_cast<uint64>(EEngineShowFlags::SF_AABB),
+            curFlag & static_cast<uint64>(EEngineShowFlags::SF_Primitives),
+            curFlag & static_cast<uint64>(EEngineShowFlags::SF_BillboardText),
+            curFlag & static_cast<uint64>(EEngineShowFlags::SF_UUIDText),
+            curFlag & static_cast<uint64>(EEngineShowFlags::SF_Fog),
+		    curFlag & static_cast<uint64>(EEngineShowFlags::SF_LightStats)
         };  // 각 항목의 체크 상태 저장
 
 		if (ImGui::BeginCombo("Show Flags", "Select Show Flags"))
@@ -66,6 +69,8 @@ uint64 ShowFlags::ConvertSelectionToFlags(const bool selected[])
 		flags |= static_cast<uint64>(EEngineShowFlags::SF_UUIDText);
     if (selected[4])
         flags |= static_cast<uint64>(EEngineShowFlags::SF_Fog);
+    if (selected[5])
+        flags |= static_cast<uint64>(EEngineShowFlags::SF_LightStats);
 	return flags;
 }
 

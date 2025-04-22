@@ -167,7 +167,7 @@ void FDirectionalShadowMapRenderPass::CreateShadowMapResource()
         renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_CASCADES);
     ID3D11ShaderResourceView* ShadowMapSRVArray =
         renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_CASCADES);
-    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
+    const TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
         renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_CASCADES);
 
     renderResourceManager->AddOrSetSRVShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
