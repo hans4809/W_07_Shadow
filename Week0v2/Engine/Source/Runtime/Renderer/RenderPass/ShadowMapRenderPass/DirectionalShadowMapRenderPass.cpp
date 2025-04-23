@@ -133,7 +133,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
         // If There's No Material Subset
         if (renderData->MaterialSubsets.Num() == 0)
         {
-            Graphics.DeviceContext->DrawIndexedInstanced(VBIBTopMappingInfo->GetNumIndices(), MAX_CASCADES, 0, 0, 0);
+            Graphics.DeviceContext->DrawIndexedInstanced(VBIBTopMappingInfo->GetNumIndices(), 1, 0, 0, 0);
         }
 
         // SubSet마다 Material Update 및 Draw
@@ -144,7 +144,7 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             // index draw
             const uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
             const uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-            Graphics.DeviceContext->DrawIndexedInstanced(indexCount, MAX_CASCADES, startIndex, 0, 0);
+            Graphics.DeviceContext->DrawIndexedInstanced(indexCount, 1, startIndex, 0, 0);
         }
     }
     
