@@ -202,14 +202,37 @@ float CalculateShadowDirLight(row_major float4x4 LightVP, float3 PixelWorldPos, 
         0.5f + shadowCoord.x / shadowCoord.w / 2.f,
         0.5f - shadowCoord.y / shadowCoord.w / 2.f
     };
-    if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
-        return 1.0;
     float shadowDepth = shadowCoord.z / shadowCoord.w;
-    
     float bias = 0.005f;
     shadowDepth -= bias;
-    mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(uv, cascadeIndex), shadowDepth).r;
-    return mapDepth;
+    if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
+        return 1.0;
+    
+    float Light = 0.f;
+    float OffsetX = 1.f / 4096;
+    float OffsetY = 1.f / 4096;
+    for (int i = -1; i <= 1; i++)
+    {
+        for (int j = -1; j <= 1; j++)
+        {
+            float2 SampleCoord =
+            {
+                uv.x + OffsetX * i,
+                uv.y + OffsetY * j
+            };
+            if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
+            {
+                float bias = 0.001;
+                Light += DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, cascadeIndex), shadowDepth - bias).r;
+            }
+            else
+            {
+                Light += 1.f;
+            }
+        }
+    }
+    Light /= 9;
+    return Light;
 }
 
 float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
