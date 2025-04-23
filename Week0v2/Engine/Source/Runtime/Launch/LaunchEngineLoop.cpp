@@ -1,8 +1,10 @@
-﻿#include "LaunchEngineLoop.h"
+#include "LaunchEngineLoop.h"
 
 #include "EditorEngine.h"
 #include "Engine/Engine.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "Profiling/PlatformTime.h"
+#include "Profiling/StatRegistry.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/UnrealEd.h"
 #include "UObject/ObjectFactory.h"
@@ -114,6 +116,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     }
     
     GEngine->Init(hWnd);
+    FStatRegistry::SetMainFrameStat("MainFrame"); // 앱 시작 시 1회만 호출
     return 0;
 }
 
@@ -130,7 +133,7 @@ void FEngineLoop::Tick()
     while (bIsExit == false)
     {
         QueryPerformanceCounter(&startTime);
-
+        FScopeCycleCounter Timer("MainFrame");
         MSG msg;
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
@@ -152,6 +155,7 @@ void FEngineLoop::Tick()
             deltaSeconds = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
         }
         while (deltaSeconds < targetFrameTime);
+        FStatRegistry::RegisterResult(Timer);
     }
 }
 

@@ -411,6 +411,10 @@
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\SpotShadowMapRenderPass.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\GeometryShader.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Profiling\PlatformTime.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Profiling\StatRegistry.h" />
+    <ClInclude Include="Engine\Source\Editor\PropertyEditor\PerformanceOverlayPanel.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\SceneBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -557,6 +561,10 @@
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ShadowMapRenderPass\SpotShadowMapRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\GeometryShader.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Profiling\PlatformTime.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Profiling\StatRegistry.cpp" />
+    <ClCompile Include="Engine\Source\Editor\PropertyEditor\PerformanceOverlayPanel.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\SceneBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />

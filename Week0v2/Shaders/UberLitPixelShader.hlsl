@@ -181,12 +181,14 @@ PS_OUTPUT mainPS(PS_INPUT input)
     [loop]
     for(uint j = 0; j < NumPointLights; ++j)
     {
-        // uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
-        // uint lightIndex = TileLightIndices[listIndex];
-        // if (lightIndex == 0xFFFFFFFF)
-        // {
-        //     break;
-        // }
+        //TileCull 적용  
+        uint listIndex = tileIndex * MAX_POINTLIGHT_COUNT + j;
+        uint lightIndex = TileLightIndices[listIndex];
+        if (lightIndex == 0xFFFFFFFF)
+        {
+            break;
+        }
+        //
         float shadow = 1.0f;
         if(PointLights[j].bCastShadow)
         {
@@ -217,5 +219,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     // 최종 색상 
     output.color = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);
+    //output.color = float4(0, 0, 0, 1);
     return output;  
 }

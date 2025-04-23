@@ -8,6 +8,7 @@
 #include "UObject/UObjectIterator.h"
 #include "Level.h"
 #include "LightManager.h"
+#include "SceneBuilder.h"
 #include "Actors/AmbientLightActor.h"
 #include "Serialization/FWindowsBinHelper.h"
 
