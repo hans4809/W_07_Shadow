@@ -21,7 +21,7 @@ public:
     void PostDuplicate() override;
     void LoadAndConstruct(const TArray<std::shared_ptr<FActorComponentInfo>>& InfoArray) override;
     FActorInfo GetActorInfo() override;
-
+    ULightComponentBase* GetLightComponent();
 protected:
     ULightComponentBase* LightComponent;
     UBillboardComponent* BillboardComponent;

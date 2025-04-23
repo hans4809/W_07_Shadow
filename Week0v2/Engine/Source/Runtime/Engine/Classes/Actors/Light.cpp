@@ -73,4 +73,7 @@ FActorInfo ALight::GetActorInfo()
 {
     return Super::GetActorInfo();
 }
-
+ULightComponentBase* ALight::GetLightComponent()
+{
+    return LightComponent;
+}
