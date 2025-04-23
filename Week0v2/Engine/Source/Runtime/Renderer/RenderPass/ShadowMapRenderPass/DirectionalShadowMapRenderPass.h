@@ -15,8 +15,8 @@ public:
 private:
     void CreateShadowMapResource();
 
-    const uint32 MapWidth = 2048;
-    const uint32 MapHeight = 2048;
+    const uint32 MapWidth = 4096;
+    const uint32 MapHeight = 4096;
 
     const FName DirLightShadowMap = TEXT("DirLightShadowMap");
 };

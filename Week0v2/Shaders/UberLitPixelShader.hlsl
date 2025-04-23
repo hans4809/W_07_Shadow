@@ -3,7 +3,6 @@
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
-Texture2DArray DirLightShadowMap : register(t7);
 
 StructuredBuffer<FLightVP> SpotVP : register(t3);
 StructuredBuffer<FLightVP> PointVP : register(t5);
@@ -141,42 +140,31 @@ PS_OUTPUT mainPS(PS_INPUT input)
          TotalLight = TotalLight * 10.0f;
     TotalLight += EmissiveColor; // 자체 발광  
     
-    float mapDepth = 1.0f;
+    float shadow = 1.0f;
+    float3 cascadeColors[4] =
+    {
+        float3(1, 0, 0), // 0번: 빨강
+            float3(0, 1, 0), // 1번: 초록
+            float3(0, 0, 1), // 2번: 파랑
+            float3(1, 1, 0) // 3번: 노랑
+    };
+    int cascadeIndex = 0;
     if(DirLight.bCastShadow)
     {
+        // 1. cascadeIndex 선택 (좌표계 일치 확인)
+        float4 viewPos = mul(float4(input.worldPos, 1.0), ViewMatrix);
+        float pixelDepth = viewPos.z;
         
-    // 1. cascadeIndex 선택 (좌표계 일치 확인)
-    float4 viewPos = mul(float4(input.worldPos, 1.0), ViewMatrix);
-    float pixelDepth = viewPos.z;
-    
-    int cascadeIndex = 0;
-    if (pixelDepth > DirLight.CascadeSplits1)
-        cascadeIndex = 1;
-    if (pixelDepth > DirLight.CascadeSplits2)
-        cascadeIndex = 2;
-    if (pixelDepth > DirLight.CascadeSplits3)
-        cascadeIndex = 3;
+        if (pixelDepth > DirLight.CascadeSplits1)
+            cascadeIndex = 1;
+        if (pixelDepth > DirLight.CascadeSplits2)
+            cascadeIndex = 2;
+        if (pixelDepth > DirLight.CascadeSplits3)
+            cascadeIndex = 3;
 
-    // 2. Shadow Map 좌표 변환
-    float4 shadowCoord = mul(float4(input.worldPos, 1.0), DirLight.ViewProjectionMatrix[cascadeIndex]);
-    
-    float2 shadowUV =
-    {
-        0.5f + shadowCoord.x / shadowCoord.w / 2.f,
-        0.5f - shadowCoord.y / shadowCoord.w / 2.f
-    };
-
-    float shadowDepth = shadowCoord.z / shadowCoord.w;
-    
-    // 4. Shadow Map 샘플링
-    float bias = 0.005; // 실험적으로 조정
-    shadowDepth -= bias;
-    mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(shadowUV, cascadeIndex), shadowDepth).r;
-    
-    // 방향광 처리
-        
+        shadow = CalculateShadowDirLight(DirLight.ViewProjectionMatrix[cascadeIndex], input.worldPos, cascadeIndex);
     }
-    TotalLight += mapDepth * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
+    TotalLight += shadow * CalculateDirectionalLight(DirLight, Normal, ViewDir, baseColor.rgb, SpecularScalar, SpecularColor);
     // 점광 처리
     [loop]
     for(uint j = 0; j < NumPointLights; ++j)
@@ -219,6 +207,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     // 최종 색상 
     output.color = float4(TotalLight * baseColor.rgb, baseColor.a * TransparencyScalar);
-    //output.color = float4(0, 0, 0, 1);
+    
+    //output.color.rgb = lerp(output.color.rgb, cascadeColors[cascadeIndex], 0.3f);
     return output;  
 }
