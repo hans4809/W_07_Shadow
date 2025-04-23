@@ -37,6 +37,7 @@ VS_OUTPUT mainVS(VS_INPUT input)
 cbuffer FSpotCB : register(b0)
 {
     row_major float4x4  ModelMatrix;
+    row_major float4x4  VPMatrix;
     uint      NumSpotLights;
     float3    pad;
 };
@@ -55,10 +56,11 @@ struct VS_OUTPUT
 VS_OUTPUT mainVS(VS_INPUT input, uint instanceID : SV_InstanceID)
 {
     VS_OUTPUT output;
-    float4 worldPos = mul(input.position, ModelMatrix);
+    float4 cameraWarped = mul(input.position, ModelMatrix);
+    cameraWarped = mul(cameraWarped, VPMatrix); // ← P′ 곱함
     uint idx = instanceID;
     row_major float4x4 VP = LightViewProjectionMatrix[idx].LightVP;
-    output.position = mul(worldPos, VP);
+    output.position = mul(cameraWarped, VP);
     output.RenderTargetArrayIndex = idx;
     return output;
 }

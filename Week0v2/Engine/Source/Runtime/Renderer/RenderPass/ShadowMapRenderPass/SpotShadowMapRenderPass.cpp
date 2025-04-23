@@ -93,6 +93,13 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
     FLightManager* LightManager = Renderer.LightManager;
     uint32 NumSpotLights = LightManager->GetVisibleSpotLights().Num();
     UpdateLightStructuredBuffer(InViewportClient);
+    std::shared_ptr<FEditorViewportClient> Camera = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
+
+    FMatrix CameraView = Camera->GetViewMatrix();
+    FMatrix CameraProj = Camera->GetProjectionMatrix();
+
+    FMatrix CameraViewProj = CameraView * CameraProj;
+
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)
     {
         const FMatrix Model = JungleMath::CreateModelMatrix(staticMeshComp->GetComponentLocation(), staticMeshComp->GetComponentRotation(),
@@ -101,6 +108,7 @@ void FSpotShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpo
         FSpotCB spotCB;
         spotCB.ModelMatrix = Model;
         spotCB.NumSpotLights = NumSpotLights;
+        spotCB.VPMatrix = CameraViewProj;
 
         Renderer.GetResourceManager()->UpdateConstantBuffer(TEXT("FSpotCB"), &spotCB);
         
@@ -267,11 +275,16 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
    TargetNDC = FVector4(TargetNDC.x / TargetNDC.w, TargetNDC.y / TargetNDC.w, TargetNDC.z / TargetNDC.w, 1.0f);
 
    // 3. NDC 공간 기준으로 LightDir 계산
-   FVector LightDirInNDC = (TargetNDC.xyz() - LightNDC.xyz()).Normalize();
-   FVector LightUpNDC = FVector(0, 1, 0); // NDC space에서도 위쪽 기준은 고정
+   //FVector LightDirInNDC = (TargetNDC.xyz() - LightNDC.xyz()).Normalize();
+   FVector LightDirWorld = LightComp->GetOwner()->GetActorForwardVector();
+   FVector4 LightDirNDC = CameraViewProj.TransformFVector4(FVector4(LightDirWorld, 0));
+   //FVector LightUpNDC = FVector(0, 1, 0); // NDC space에서도 위쪽 기준은 고정
+   FVector LightUpNDC = FMatrix::TransformVector(LightComp->GetOwner()->GetActorUpVector(),CameraViewProj);
 
    // 4. Light ViewMatrix 구성
-   FMatrix LightViewInNDC = JungleMath::CreateViewMatrix(LightNDC.xyz(), TargetNDC.xyz(), LightUpNDC);
+   //FMatrix LightViewInNDC = JungleMath::CreateViewMatrix(LightNDC.xyz(), TargetNDC.xyz(), LightUpNDC);
+   FMatrix LightViewInNDC = JungleMath::CreateViewMatrix(
+       LightNDC.xyz(), LightNDC.xyz()+LightDirNDC.xyz(), LightUpNDC);
 
    FVector Min = +FLT_MAX, Max = -FLT_MAX;
    for (int i = 0; i < 8; ++i)
@@ -289,7 +302,7 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
    FVector BoxCenter = (Min + Max) * 0.5f;
    FVector BoxExtent = (Max - Min) * 0.5f;
 
-   float nearZ = std::max(1.0f, Min.z); // LH 좌표계에서 z는 + 방향으로 멀어짐
+   float nearZ = std::max(0.01f, Min.z); // LH 좌표계에서 z는 + 방향으로 멀어짐
    float farZ = Max.z;
 
    float height = BoxExtent.y * 2.0f;
@@ -302,8 +315,17 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
        JungleMath::CreateProjectionMatrix(fovY, aspect, nearZ, farZ);  
 
    // Fix: Remove const qualifier to allow calling SetViewProjectionMatrix  
-   const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
-   const_cast<USpotLightComponent*>(LightComp)->SetProjectionMatrix(ProjectionMatrix);
+   //const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
+   //const_cast<USpotLightComponent*>(LightComp)->SetProjectionMatrix(ProjectionMatrix);
 
-   return ViewMatrix * ProjectionMatrix * InvCameraViewProj;
+   const float OuterConeAngle = LightComp->GetOuterConeAngle();
+   const float AspectRatio = 1.0f;
+   const float NearZ = 0.1f;
+   const float FarZ = LightComp->GetRadius();
+
+   const FMatrix OriginalProjectionMatrix =
+       JungleMath::CreateProjectionMatrix(OuterConeAngle * 2, AspectRatio, NearZ, FarZ);
+
+
+   return LightViewInNDC * OriginalProjectionMatrix;
 }

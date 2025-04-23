@@ -29,6 +29,7 @@ protected:
      struct alignas(16) FSpotCB
     {
         FMatrix ModelMatrix;
+        FMatrix VPMatrix;
         uint32  NumSpotLights;
         FVector pad;
     };

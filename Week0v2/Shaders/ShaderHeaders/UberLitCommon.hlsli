@@ -191,12 +191,27 @@ bool InRange(float val, float min, float max)
 {
     return (min <= val && val <= max);
 }
+cbuffer FCameraConstant : register(b3)
+{
+    row_major matrix ViewMatrix;
+    row_major matrix ProjMatrix;
+    row_major matrix ViewProjMatrix;
 
+    float3 CameraPos;
+    float NearPlane;
+    float3 CameraForward;
+    float FarPlane;
+};
 float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
 {
-    float bias = 0.001f;
+    float bias = 0.000f;
     //float4 lightSpace = mul(light.LightVP, float4(worldPos, 1.0));
-    float4 lightSpace = mul(float4(PixelWorldPos, 1.0), light.LightVP);
+    
+        // Step 1: 카메라의 ViewProj으로 Warp (PostPerspective Space)
+    float4 cameraSpace = mul(float4(PixelWorldPos, 1.0f), ViewProjMatrix);
+    cameraSpace /= cameraSpace.w;
+    
+    float4 lightSpace = mul(cameraSpace, light.LightVP);
     lightSpace.xyz /= lightSpace.w;
 
     float2 uv =
@@ -313,17 +328,7 @@ cbuffer FFlagConstants : register(b2)
     uint IsNormal;
     float2 flagPad0;
 };
-cbuffer FCameraConstant : register(b3)
-{
-    row_major matrix ViewMatrix;
-    row_major matrix ProjMatrix;
-    row_major matrix ViewProjMatrix;
 
-    float3 CameraPos;
-    float NearPlane;
-    float3 CameraForward;
-    float FarPlane;
-};
 
 cbuffer FConstatntBufferActor : register(b4)
 {
