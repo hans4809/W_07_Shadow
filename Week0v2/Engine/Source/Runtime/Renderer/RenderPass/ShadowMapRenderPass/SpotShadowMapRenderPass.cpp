@@ -35,7 +35,7 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
     rasterDesc.DepthBiasClamp = 0.0f;             // Bias 최대값 제한 (보통 0.0f)
 
     // Rasterizer State 생성
-    HRESULT hr = Graphics.Device->CreateRasterizerState(&rasterDesc, &rasterizerState);
+    //HRESULT hr = Graphics.Device->CreateRasterizerState(&rasterDesc, &rasterizerState);
 }
 
 FSpotShadowMapRenderPass::~FSpotShadowMapRenderPass()
@@ -176,7 +176,7 @@ void FSpotShadowMapRenderPass::UpdateLightStructuredBuffer(std::shared_ptr<FView
         if (!LightComp) continue;
 
         FLightVP GPULight;
-        GPULight.LightVP = ComputeViewProj(LightComp);
+        GPULight.LightVP = ComputeViewProjPSM(LightComp,InViewportClient);
         SpotLightViewProjMatrices.Add(GPULight);
     }
 
@@ -223,7 +223,7 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
     FMatrix CameraProj = Camera->GetProjectionMatrix();
 
     FMatrix CameraViewProj = CameraView * CameraProj;
-    FMatrix InvCameraViewProj = FMatrix::Inverse(CameraView);
+    FMatrix InvCameraViewProj = FMatrix::Inverse(CameraViewProj);
 
     FVector NDCPoints[8] = {
     {-1,-1,0}, {1,-1,0}, {-1,1,0}, {1,1,0},
@@ -238,17 +238,45 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
         WorldPoints[i] = FVector(world.x/world.w,world.y/world.w,world.z/world.w);
     }
 
+    FVector FrustumCenter = FVector(0,0,0);
+    for (int i = 0; i < 8; ++i)
+        FrustumCenter += WorldPoints[i];
+    FrustumCenter /= 8.0f;
+
    const FVector LightUp = LightComp->GetOwner()->GetActorUpVector();  
    const FVector LightDir = LightComp->GetOwner()->GetActorForwardVector();  
-   const FVector LightTarget = FVector(0,0,0);  
-   const FVector LightPos = LightTarget-LightDir*10.0f;  
-   const FMatrix ViewMatrix =
-        JungleMath::CreateViewMatrix(LightPos, LightPos + LightDir, LightUp);
+   const FVector LightTarget = FrustumCenter;
+   const FVector LightPos = LightTarget-LightDir*100.0f;  
+   //const FVector LightPos = LightComp->GetComponentLocation();  
+   const FMatrix ViewMatrix =   
+        JungleMath::CreateViewMatrix(LightPos, LightPos+LightDir, LightUp);
+   
+   // 1. 라이트의 월드 위치를 카메라 ViewProj으로 Warp
+   FVector4 LightWorld = FVector4(LightComp->GetComponentLocation(), 1.0f);
+   FVector4 LightNDC = CameraViewProj.TransformFVector4(LightWorld);
+   LightNDC = FVector4(LightNDC.x/LightNDC.w, LightNDC.y / LightNDC.w, LightNDC.z / LightNDC.w,1.0f);
+   
+   //// 2. LookAt Target = FrustumCenter in NDC space
+   //FVector4 TargetWorld = FVector4(FrustumCenter, 1.0f);
+   //FVector4 TargetNDC = CameraViewProj.TransformFVector4(TargetWorld);
+   //TargetNDC = FVector4(TargetNDC.x / TargetNDC.w, TargetNDC.y / TargetNDC.w, TargetNDC.z / TargetNDC.w, 1.0f);
+   
+   // 2. LookAt Target = FrustumCenter in NDC space
+   FVector4 TargetWorld = LightWorld + FVector4(LightDir.x, LightDir.y, LightDir.z, 0.0f);
+   FVector4 TargetNDC = CameraViewProj.TransformFVector4(TargetWorld);
+   TargetNDC = FVector4(TargetNDC.x / TargetNDC.w, TargetNDC.y / TargetNDC.w, TargetNDC.z / TargetNDC.w, 1.0f);
+
+   // 3. NDC 공간 기준으로 LightDir 계산
+   FVector LightDirInNDC = (TargetNDC.xyz() - LightNDC.xyz()).Normalize();
+   FVector LightUpNDC = FVector(0, 1, 0); // NDC space에서도 위쪽 기준은 고정
+
+   // 4. Light ViewMatrix 구성
+   FMatrix LightViewInNDC = JungleMath::CreateViewMatrix(LightNDC.xyz(), TargetNDC.xyz(), LightUpNDC);
 
    FVector Min = +FLT_MAX, Max = -FLT_MAX;
    for (int i = 0; i < 8; ++i)
    {
-       FVector p = ViewMatrix.TransformPosition(WorldPoints[i]);
+       FVector p = LightViewInNDC.TransformPosition(WorldPoints[i]);
        Min.x = std::min(Min.x, p.x);
        Min.y = std::min(Min.y, p.y);
        Min.z = std::min(Min.z, p.z);
@@ -277,5 +305,5 @@ FMatrix FSpotShadowMapRenderPass::ComputeViewProjPSM(const USpotLightComponent* 
    const_cast<USpotLightComponent*>(LightComp)->SetViewMatrix(ViewMatrix);
    const_cast<USpotLightComponent*>(LightComp)->SetProjectionMatrix(ProjectionMatrix);
 
-   return ViewMatrix * ProjectionMatrix;  
+   return ViewMatrix * ProjectionMatrix * InvCameraViewProj;
 }
