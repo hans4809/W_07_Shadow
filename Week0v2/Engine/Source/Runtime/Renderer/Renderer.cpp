@@ -12,6 +12,7 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "D3D11RHI/FShaderProgram.h"
+#include "RenderPass/DepthPrePass.h"
 #include "RenderPass/EditorIconRenderPass.h"
 #include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
@@ -87,6 +88,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexPixelShader(TEXT("UberLit"), nullptr);
     FString PhongShaderName = TEXT("UberLit");
     PhongRenderPass = std::make_shared<FStaticMeshRenderPass>(PhongShaderName);
+    DepthPrePass = std::make_shared<FDepthPrePass>(TEXT("UberLit"));
     
     CreateVertexPixelShader(TEXT("Line"), nullptr);
     LineBatchRenderPass = std::make_shared<FLineBatchRenderPass>(TEXT("Line"));
@@ -280,48 +282,13 @@ void FRenderer::CreateGeometryShader(const FString& InPrefix, D3D_SHADER_MACRO* 
 
 #pragma region Shader
 
-// void FRenderer::CreateComputeShader()
-// {
-//     ID3DBlob* CSBlob_LightCulling = nullptr;
-//     
-//     ID3D11ComputeShader* ComputeShader = RenderResourceManager->GetComputeShader(TEXT("TileLightCulling"));
-//     
-//     if (ComputeShader == nullptr)
-//     {
-//         Graphics->CreateComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr, &CSBlob_LightCulling, &ComputeShader);
-//     }
-//     else
-//     {
-//         FGraphicsDevice::CompileComputeShader(TEXT("C:\\Users\\Jungle\\Desktop\\Github\\W_07_Shadow\\Week0v2\\Shaders\\TileLightCulling.compute"), nullptr,  &CSBlob_LightCulling);
-//     }
-//     RenderResourceManager->AddOrSetComputeShader(TEXT("TileLightCulling"), ComputeShader);
-//     
-//     TArray<FConstantBufferInfo> LightCullingComputeConstant;
-//     Graphics->ExtractPixelShaderInfo(CSBlob_LightCulling, LightCullingComputeConstant);
-//     
-//     TMap<FShaderConstantKey, uint32> ShaderStageToCB;
-//
-//     for (const FConstantBufferInfo item : LightCullingComputeConstant)
-//     {
-//         ShaderStageToCB[{EShaderStage::CS, item.Name}] = item.BindSlot;
-//         if (RenderResourceManager->GetConstantBuffer(item.Name) == nullptr)
-//         {
-//             ID3D11Buffer* ConstantBuffer = RenderResourceManager->CreateConstantBuffer(item.ByteWidth);
-//             RenderResourceManager->AddOrSetConstantBuffer(item.Name, ConstantBuffer);
-//         }
-//     }
-//
-//     MappingVSPSCBSlot(TEXT("TileLightCulling"), ShaderStageToCB);
-//     
-//     ComputeTileLightCulling = std::make_shared<FComputeTileLightCulling>(TEXT("TileLightCulling"));
-//
-//     SAFE_RELEASE(CSBlob_LightCulling)
-// }
-
 void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     SetViewMode(ActiveViewport->GetViewMode());
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
+
+    DepthPrePass->Prepare(ActiveViewport);
+    DepthPrePass->Execute(ActiveViewport);
 
     if (ActiveViewport->GetViewMode() != EViewModeIndex::VMI_Wireframe
         && ActiveViewport->GetViewMode() != EViewModeIndex::VMI_Normal
@@ -404,6 +371,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 
 void FRenderer::ClearRenderObjects() const
 {
+    DepthPrePass->ClearRenderObjects();
     DirectionalShadowMapRenderPass->ClearRenderObjects();
     PointShadowMapRenderPass->ClearRenderObjects();
     SpotShadowMapRenderPass->ClearRenderObjects();
@@ -473,6 +441,7 @@ void FRenderer::SetViewMode(const EViewModeIndex evi)
 
 void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_ptr<FEditorViewportClient>& ActiveViewport) const
 {
+    DepthPrePass->AddRenderObjectsToRenderPass(InWorld);
     //값을 써줄때 
     LightManager->CollectLights(InWorld);
     FMatrix View = ActiveViewport->GetViewMatrix();

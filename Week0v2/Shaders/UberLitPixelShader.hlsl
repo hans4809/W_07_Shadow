@@ -3,9 +3,8 @@
 Texture2D Texture : register(t0);
 Texture2D NormalTexture : register(t1);
 StructuredBuffer<uint> TileLightIndices : register(t2);
-Texture2DArray DirLightShadowMap : register(t7);
 
-StructuredBuffer<FLightVP> SpotVP : register(t3);
+StructuredBuffer<FLightVP> SpotVP : register(t3);  
 StructuredBuffer<FLightVP> PointVP : register(t5);
 
 struct PS_INPUT

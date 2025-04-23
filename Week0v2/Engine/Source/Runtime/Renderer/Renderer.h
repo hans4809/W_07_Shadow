@@ -10,6 +10,7 @@
 #include "RenderPass/DebugDepthRenderPass.h"
 #include "RenderPass/FogRenderPass.h"
 
+class FDepthPrePass;
 class FDirectionalShadowMapRenderPass;
 class FPointShadowMapRenderPass;
 class FSpotShadowMapRenderPass;
@@ -97,6 +98,8 @@ public:
 private:
     FRenderResourceManager* RenderResourceManager = nullptr;
 
+    std::shared_ptr<FDepthPrePass> DepthPrePass;
+    
     std::shared_ptr<FStaticMeshRenderPass> GoroudRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> LambertRenderPass;
     std::shared_ptr<FStaticMeshRenderPass> PhongRenderPass;

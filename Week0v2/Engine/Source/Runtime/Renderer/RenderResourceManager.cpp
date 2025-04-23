@@ -1023,8 +1023,6 @@ void FRenderResourceManager::AddOrSetShadowMapSRV(const FName InShadowMapName, I
         ShadowMaps[InShadowMapName].SRV->Release();
     }
     ShadowMaps[InShadowMapName].SRV = InShadowSRV;
-
-    ShadowMapSRVMemory[InShadowMapName] = DescriptorSize;
 }
 
 void FRenderResourceManager::AddOrSetShadowMapDSV(const FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
@@ -1039,8 +1037,6 @@ void FRenderResourceManager::AddOrSetShadowMapDSV(const FName InShadowMapName, I
         ShadowMaps[InShadowMapName].DSV->Release();
     }
     ShadowMaps[InShadowMapName].DSV = InShadowDSV;
-
-    ShadowMapDSVMemory[InShadowMapName] = DescriptorSize;
 }
 
 void FRenderResourceManager::AddOrSetSRVShadowMapSlice(const FName InName, const TArray<ID3D11ShaderResourceView*>& InShadowSliceSRVs)

@@ -83,7 +83,6 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
         return;
     }
 
-
     D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
     ZeroMemory(&descDSV, sizeof(descDSV));
     descDSV.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; // 깊이 스텐실 포맷
@@ -101,6 +100,18 @@ void FGraphicsDevice::CreateDepthStencilBuffer(HWND hWindow)
         MessageBox(hWindow, errorMsg, L"Error", MB_ICONERROR | MB_OK);
         return;
     }
+
+    descDepth.Format = DXGI_FORMAT_R32_TYPELESS;
+    Device->CreateTexture2D(&descDepth, nullptr, &DepthPrePassBuffer);
+
+    descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+    Device->CreateDepthStencilView(DepthPrePassBuffer, &descDSV, &DepthPrePassDSV);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC descSRV = {};
+    descSRV.Format = DXGI_FORMAT_R32_FLOAT;
+    descSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    descSRV.Texture2D.MipLevels = 1;
+    Device->CreateShaderResourceView(DepthPrePassBuffer ,&descSRV, &DepthPrePassSRV);
 }
 
 bool FGraphicsDevice::CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC* pDepthStencilDesc, ID3D11DepthStencilState** ppDepthStencilState) const

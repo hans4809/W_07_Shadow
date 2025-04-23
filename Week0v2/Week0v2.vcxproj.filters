@@ -487,6 +487,8 @@
     <FxCompile Include="Shaders\ShadowMapGeometryShader.hlsl" />
     <FxCompile Include="Shaders\TileLightCullingComputeShader.hlsl" />
     <FxCompile Include="Shaders\ShadowMapPixelShader.hlsl" />
+    <FxCompile Include="Shaders\LightCullingComputeShader.hlsl" />
+    <FxCompile Include="Shaders\TileMaskComputeShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
@@ -562,5 +564,6 @@
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />
     <None Include="Shaders\ShaderHeaders\GSamplers.hlsli" />
     <None Include="Shaders\ShaderHeaders\UberLitCommon.hlsli" />
+    <None Include="Shaders\ShaderHeaders\CullingHeader.hlsli" />
   </ItemGroup>
 </Project>

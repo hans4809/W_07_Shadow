@@ -696,10 +696,10 @@ void ControlEditorPanel::CreateLightStats()
                 const int TotalNum    = AmbientLightNum + DirectionalLightNum + PointLightNum + SpotLightNum;
 
 
-                const size_t AmbientBytes     = AmbientLightNum     * sizeof(UAmbientLightComponent);
-                const size_t DirectionalBytes = DirectionalLightNum * sizeof(UDirectionalLightComponent) + renderResourceManager->GetShadowMapMemorySize(TEXT("DirLightShadowMap"));
-                const size_t PointBytes       = PointLightNum       * sizeof(UPointLightComponent) + 6 * sizeof(ID3D11ShaderResourceView) + renderResourceManager->GetShadowMapMemorySize(TEXT("PointLightShadowMap"));
-                const size_t SpotBytes        = SpotLightNum        * sizeof(USpotLightComponent) + sizeof(ID3D11ShaderResourceView) + renderResourceManager->GetShadowMapMemorySize(TEXT("SpotLightShadowMap"));
+                const size_t AmbientBytes = /*AmbientLightNum * sizeof(UAmbientLightComponent);*/0;
+                const size_t DirectionalBytes = /*DirectionalLightNum * sizeof(UDirectionalLightComponent) +*/  renderResourceManager->GetShadowMapMemorySize(TEXT("DirLightShadowMap"));
+                const size_t PointBytes       = /*PointLightNum * sizeof(UPointLightComponent) + 6 * sizeof(ID3D11ShaderResourceView) +*/ renderResourceManager->GetShadowMapMemorySize(TEXT("PointLightShadowMap"));
+                const size_t SpotBytes        = /*SpotLightNum * sizeof(USpotLightComponent) + sizeof(ID3D11ShaderResourceView) +*/ renderResourceManager->GetShadowMapMemorySize(TEXT("SpotLightShadowMap"));
 
                 const size_t TotalBytes = AmbientBytes + DirectionalBytes + PointBytes + SpotBytes;
 

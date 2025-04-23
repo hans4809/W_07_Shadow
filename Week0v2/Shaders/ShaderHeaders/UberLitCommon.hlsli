@@ -75,6 +75,16 @@ struct FLightVP
     row_major float4x4 LightVP;
 };
 
+Texture2DArray<float> SpotShadowMap : register(t4);
+TextureCubeArray<float> PointShadowMap : register(t6);
+Texture2DArray DirLightShadowMap : register(t7);
+
+StructuredBuffer<FPointLight> PointLightBuffer : register(t8);
+StructuredBuffer<FSpotLight> SpotLightBuffer : register(t9);
+
+RWStructuredBuffer<uint> LightIndexList : register(u1);
+RWStructuredBuffer<uint> LightCount : register(u2);
+
 // ---------------------------------------------
 // 조명 계산 함수 정의
 // ---------------------------------------------
@@ -183,9 +193,6 @@ float3 CalculateSpotLight(
     return (Diffuse + specularColor) * SpotAttenuation * DistanceAttenuation;
 #endif
 }
-
-Texture2DArray<float> SpotShadowMap : register(t4);
-TextureCubeArray<float> PointShadowMap : register(t6);
 
 bool InRange(float val, float min, float max)
 {

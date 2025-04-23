@@ -46,8 +46,10 @@ public:
     ID3D11Texture2D* DepthCopyTexture;
     ID3D11ShaderResourceView* DepthCopySRV;
 
-
-
+    ID3D11Texture2D* DepthPrePassBuffer = nullptr;
+    ID3D11ShaderResourceView* DepthPrePassSRV;
+    ID3D11DepthStencilView* DepthPrePassDSV;
+    
     //Fog 처리용 변수
     ID3D11ShaderResourceView* SceneColorSRV = nullptr;
     ID3D11Texture2D* SceneColorBuffer = nullptr;

@@ -4,7 +4,6 @@
 // 출력 버퍼: 타일별 영향받는 광원 인덱스 리스트
 RWStructuredBuffer<uint> TileLightIndices : register(u0);
 
-
 bool IntersectRaySphere(float3 rayOrigin, float3 rayDir, float3 sphereCenter, float radius)
 {
     float3 OriginToCenter = sphereCenter - rayOrigin;
