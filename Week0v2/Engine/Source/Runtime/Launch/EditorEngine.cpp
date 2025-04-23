@@ -13,6 +13,7 @@
 #include "UObject/UObjectIterator.h"
 #include "BaseGizmos/GizmoBaseComponent.h"
 #include "BaseGizmos/TransformGizmo.h"
+#include "Engine/SceneBuilder.h"
 
 class ULevel;
 
@@ -64,6 +65,7 @@ int32 UEditorEngine::Init(HWND hwnd)
     graphicDevice.OnResize(hWnd);
     
     SceneMgr = new FSceneMgr();
+    //SceneBuilder::SpawnAppleScene(GWorld);
 
     return 0;
 }

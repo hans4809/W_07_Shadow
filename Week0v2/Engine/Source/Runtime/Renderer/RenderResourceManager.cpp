@@ -1083,7 +1083,7 @@ ID3D11DepthStencilView* FRenderResourceManager::GetShadowMapDSV(const FName InNa
 
 ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, const int index) const
 {
-    if (SRVShadowMapSlice.Contains(InName))
+    if (SRVShadowMapSlice.Contains(InName) && index < SRVShadowMapSlice[InName].Num())
     {
         return SRVShadowMapSlice[InName][index];
     }

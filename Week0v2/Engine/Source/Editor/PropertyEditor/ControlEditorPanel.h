@@ -20,7 +20,7 @@ private:
     void CreatePIEButton(ImVec2 ButtonSize) const;
     void CreateSRTButton(ImVec2 ButtonSize) const;
     void CreateLightStats();
-
+    void CreateFPSStats();
     uint64 ConvertSelectionToFlags(const bool selected[]) const;
     
 private:

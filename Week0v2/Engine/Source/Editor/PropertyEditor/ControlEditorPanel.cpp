@@ -23,6 +23,10 @@
 #include "Components/PrimitiveComponents/UParticleSubUVComp.h"
 #include "Components/PrimitiveComponents/UTextComponent.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
+#include "Engine/SceneBuilder.h"
+#include "ImGUI/imgui_internal.h"
+#include "Profiling/PlatformTime.h"
+#include "Profiling/StatRegistry.h"
 
 void ControlEditorPanel::Initialize(SLevelEditor* levelEditor)
 {
@@ -94,7 +98,7 @@ void ControlEditorPanel::Render()
     ImGui::PopFont();
 
     CreateLightStats();
-
+    CreateFPSStats();
     ImGui::End();
 }
 
@@ -181,7 +185,11 @@ void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
 
             ImGui::EndMenu();
         }
-
+        ImGui::Separator();
+        if (ImGui::MenuItem("Test Scene"))
+        {
+            SceneBuilder::SpawnAppleScene(GEngine->GetWorld());
+        }
         ImGui::Separator();
 
         if (ImGui::MenuItem("Quit"))
@@ -523,7 +531,7 @@ void ControlEditorPanel::CreateFlagButton() const
         ImGui::OpenPopup("ShowControl");
     }
 
-    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "LightStats" };
+    const char* items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "LightStats","FPSStats" };
     const uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
 
     if (ImGui::BeginPopup("ShowControl"))
@@ -536,6 +544,7 @@ void ControlEditorPanel::CreateFlagButton() const
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_UUIDText)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_LightStats)) != 0,
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_FPSStats)) != 0
         };  // 각 항목의 체크 상태 저장
 
         for (int i = 0; i < IM_ARRAYSIZE(items); i++)
@@ -742,7 +751,69 @@ void ControlEditorPanel::CreateLightStats()
         ImGui::End();
     }
 }
+void ControlEditorPanel::CreateFPSStats()
+{
+    auto ActiveViewport = GEngine->GetLevelEditor()->GetActiveViewportClient();
 
+    /* Pre Setup */
+    //ImGuiIO& io = ImGui::GetIO();
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_FPSStats))
+    {
+        float PanelWidth = Width * 0.2f - 6.0f;
+        float PanelHeight = Height * 0.25f;
+
+        float PanelPosX = 0 * 0.8f + 5.0f;
+        float PanelPosY = Height * 0.35f; // Outliner 아래에 위치하도록
+
+        ImVec2 MinSize(140, 100);
+        ImVec2 MaxSize(FLT_MAX, 400);
+
+        /* Size Constraints */
+        ImGui::SetNextWindowSizeConstraints(MinSize, MaxSize);
+
+        /* Position & Size */
+        ImGui::SetNextWindowPos(ImVec2(PanelPosX, PanelPosY), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
+
+        /* Window Flags */
+        ImGuiWindowFlags PanelFlags =
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoCollapse;
+
+        /* Background Alpha (for performance panel transparency) */
+        ImGui::SetNextWindowBgAlpha(0.35f);
+
+        /* Begin Panel */
+        ImGui::Begin("Performance", nullptr, PanelFlags);
+
+        // FPS 표시
+        static TStatId Stat_Frame("MainFrame");
+        float fps = static_cast<float>(FStatRegistry::GetFPS(Stat_Frame));
+        ImGui::Text("FPS: %.2f", fps);
+        auto Stats = FStatRegistry::GetFPSStats(Stat_Frame);
+        ImGui::Text("FPS (1s): %.2f", Stats.FPS_1Sec);
+        ImGui::Text("FPS (5s): %.2f", Stats.FPS_5Sec);
+
+        // Stat 타이밍 표시
+        if (ImGui::CollapsingHeader("Stat Timings (ms)", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            const auto& StatMap = FStatRegistry::GetStatMap();
+            for (const auto& Pair : StatMap)
+            {
+                const uint32 StatKey = Pair.Key;
+                double Ms = Pair.Value;
+
+                FName StatName(StatKey); // FName 생성자 필요
+                FString NameString = StatName.ToString();
+
+                ImGui::Text("%s: %.3f ms", GetData(NameString), Ms);
+            }
+        }
+
+        ImGui::End();
+    }
+}
 uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
 {
     uint64 flags = static_cast<uint64>(EEngineShowFlags::None);
@@ -759,6 +830,8 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
         flags |= static_cast<uint64>(EEngineShowFlags::SF_Fog);
     if (selected[5])
         flags |= static_cast<uint64>(EEngineShowFlags::SF_LightStats);
+    if (selected[6])
+        flags |= static_cast<uint64>(EEngineShowFlags::SF_FPSStats);
     return flags;
 }
 

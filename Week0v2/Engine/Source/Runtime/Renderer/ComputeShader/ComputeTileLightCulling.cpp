@@ -176,6 +176,6 @@ void FComputeTileLightCulling::UpdateComputeConstants(const std::shared_ptr<FVie
 
     ID3D11Buffer* ComputeConstantBuffer = renderResourceManager->GetConstantBuffer(TEXT("FComputeConstants"));
     
-    Graphics.DeviceContext->CSSetConstantBuffers(0, 1, &ComputeConstantBuffer);
+    Graphics.DeviceContext->CSSetConstantBuffers(6, 1, &ComputeConstantBuffer);
     renderResourceManager->UpdateConstantBuffer(ComputeConstantBuffer, &ComputeConstants);
 }

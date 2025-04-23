@@ -169,6 +169,9 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Source\Runtime\Core\Profiling\PlatformTime.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Profiling\StatRegistry.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\SceneBuilder.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.cpp" />
     <ClCompile Include="Engine\Source\Editor\LevelEditor\SLevelEditor.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\ControlEditorPanel.cpp" />
@@ -301,6 +304,9 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Source\Runtime\Core\Profiling\PlatformTime.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Profiling\StatRegistry.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\SceneBuilder.h" />
     <ClInclude Include="Engine\Source\Runtime\Windows\D3D11RHI\Shaders\ComputeShader.h" />
     <ClInclude Include="Engine\Source\Editor\LevelEditor\SLevelEditor.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\ControlEditorPanel.h" />

@@ -135,8 +135,6 @@ struct alignas(16) FMaterialConstants
     FVector EmissiveColor; // offset: 48, size: 12
     uint32 bHasNormalTexture; // offset: 60, size: 4
 };
-#define NUM_POINT_LIGHT 16
-#define NUM_SPOT_LIGHT 16
 struct alignas(16) FLightingConstants
 {
     uint32 NumPointLights; // offset: 4, size: 4
@@ -144,8 +142,8 @@ struct alignas(16) FLightingConstants
     float pad[2]; // offset: 8, size: 8
     FAmbientLight AmbientLight;
     FDirectionalLight DirLight;
-    FPointLight PointLights[NUM_POINT_LIGHT];
-    FSpotLight SpotLights[NUM_SPOT_LIGHT];
+    FPointLight PointLights[MAX_POINT_LIGHTS];
+    FSpotLight SpotLights[MAX_SPOT_LIGHTS];
 };
 
 struct alignas(16) FFlagConstants

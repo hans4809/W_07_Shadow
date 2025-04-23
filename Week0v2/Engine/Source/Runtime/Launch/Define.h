@@ -20,8 +20,8 @@
 
 // 임시
 #define MAX_CASCADES 4
-#define MAX_SPOT_LIGHTS 16
-#define MAX_POINT_LIGHTS 8
+#define MAX_SPOT_LIGHTS 100
+#define MAX_POINT_LIGHTS 100
 
 struct FVertexSimple
 {
