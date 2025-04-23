@@ -135,6 +135,9 @@ public: //Camera Movement
     void PivotMoveRight(float _Value);
     void PivotMoveUp(float _Value);
 
+    bool bLightView = false;
+    void SetViewMatrix(FMatrix& InView) { View = InView; }
+    void SetProjectionMatrix(FMatrix& InProjection) { Projection = InProjection; }
     FMatrix& GetViewMatrix() { return  View; }
     FMatrix& GetProjectionMatrix() { return Projection; }
     void UpdateViewMatrix();

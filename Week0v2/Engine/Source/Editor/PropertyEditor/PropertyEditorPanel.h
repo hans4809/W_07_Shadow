@@ -40,5 +40,6 @@ private:
     UActorComponent* PickedComponent = nullptr;
     UActorComponent* LastComponent = nullptr;
     bool bFirstFrame = true;
-
+    FMatrix ViewClient;
+    FMatrix ProjectionClient;
 };

@@ -109,7 +109,8 @@ void FDirectionalShadowMapRenderPass::Execute(std::shared_ptr<FViewportClient> I
             lightView, lightProj
         );
         cascadeCB.LightVP[i] = lightView * lightProj;
-        Renderer.LightManager->GetDirectionalLight()->SetViewProjectionMatrix(i, cascadeCB.LightVP[i]);
+        Renderer.LightManager->GetDirectionalLight()->SetViewMatrix(i, lightView);
+        Renderer.LightManager->GetDirectionalLight()->SetProjectionMatrix(i, lightProj);
     }
 
     for (const UStaticMeshComponent* staticMeshComp : StaticMeshComponents)
@@ -167,13 +168,12 @@ void FDirectionalShadowMapRenderPass::CreateShadowMapResource()
         renderResourceManager->CreateTexture2DArrayDSV(ShadowMapTexture2DArray, MAX_CASCADES);
     ID3D11ShaderResourceView* ShadowMapSRVArray =
         renderResourceManager->CreateTexture2DArraySRV(ShadowMapTexture2DArray, MAX_CASCADES);
-    TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
+    const TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs =
         renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_CASCADES);
 
-    renderResourceManager->AddOrSetSRVShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetSRVShadowMapSRV(DirLightShadowMap, ShadowMapSRVArray);
-    renderResourceManager->AddOrSetDSVShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetDSVShadowMapDSV(DirLightShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetShadowMapTexutre(DirLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetShadowMapSRV(DirLightShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetShadowMapDSV(DirLightShadowMap, ShadowMapDSVArray);
     renderResourceManager->AddOrSetSRVShadowMapSlice(DirLightShadowMap, Texture2DArraySliceSRVs);
 
 }

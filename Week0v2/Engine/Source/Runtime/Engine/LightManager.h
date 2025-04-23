@@ -12,7 +12,7 @@ class ULightComponentBase;
 class FLightManager
 {
 public:
-    void CollectLights(UWorld* InWorld);
+    void CollectLights(const UWorld* InWorld);
     void CullLights(const FFrustum& ViewFrustum);
     void UploadLightConstants();
     void VisualizeLights();
@@ -25,6 +25,12 @@ public:
 
     TArray<UPointLightComponent*>& GetVisiblePointLights() { return VisiblePointLights; }
     TArray<USpotLightComponent*>& GetVisibleSpotLights() { return VisibleSpotLights; }
+
+    uint32 GetAmbientLightNum() const;
+    uint32 GetDirectionalLightNum() const;
+
+    uint32 GetPointLightNum() const;
+    uint32 GetSpotLightNum() const;
 private:
     UAmbientLightComponent* AmbientLight = nullptr;
     UDirectionalLightComponent* DirectionalLight = nullptr;
@@ -35,5 +41,5 @@ private:
     TArray<UPointLightComponent*> VisiblePointLights;
     TArray<USpotLightComponent*> VisibleSpotLights;
 
-    bool IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const;
+    static bool IsSpotLightInFrustum(const USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum);
 };

@@ -23,8 +23,7 @@ FLineBatchRenderPass::FLineBatchRenderPass(const FName& InShaderName)
     FSimpleVertex vertices[2]{ {0}, {0} };
 
     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
-    ID3D11Buffer* pVertexBuffer = renderResourceManager->CreateStaticVertexBuffer<FSimpleVertex>(vertices, 2);
-    renderResourceManager->AddOrSetVertexBuffer(TEXT("LineBatchVB"), pVertexBuffer);
+    ID3D11Buffer* pVertexBuffer = renderResourceManager->CreateStaticVertexBuffer<FSimpleVertex>(("LineBatchVB"), vertices, 2);
 
     GEngine->renderer.MappingVBTopology(TEXT("LineBatch"), TEXT("LineBatchVB"), sizeof(FSimpleVertex), 2, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
     VBIBTopologyMappingName = TEXT("LineBatch");
@@ -113,114 +112,84 @@ void FLineBatchRenderPass::UpdateBatchResources()
     const FGraphicsDevice& Graphics = GEngine->graphicDevice;
 
     UPrimitiveBatch& PrimitveBatch = UPrimitiveBatch::GetInstance();
-
     {
+        ID3D11Buffer* SB = nullptr;
         if (PrimitveBatch.GetBoundingBoxes().Num() > PrimitveBatch.GetAllocatedBoundingBoxCapacity())
         {
             PrimitveBatch.SetAllocatedBoundingBoxCapacity(PrimitveBatch.GetBoundingBoxes().Num());
 
-            ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = renderResourceManager->CreateStructuredBuffer<FBoundingBox>(static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
-            SBSRV = renderResourceManager->CreateBufferSRV(SB, static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
 
-            renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("BoundingBox"), SB);
-            renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("BoundingBox"), SBSRV);
+            SB = renderResourceManager->CreateStructuredBuffer<FBoundingBox>(TEXT("BoundingBox"), static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
+            renderResourceManager->CreateBufferSRV(TEXT("BoundingBox"), SB, static_cast<uint32>(PrimitveBatch.GetAllocatedBoundingBoxCapacity()));
         }
 
-        ID3D11Buffer* SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("BoundingBox"));
+        SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("BoundingBox"));
         ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("BoundingBox"));
         if (SB != nullptr && SBSRV != nullptr)
-        {
-            renderResourceManager->UpdateStructuredBuffer(SB, PrimitveBatch.GetBoundingBoxes());
-        }
+            renderResourceManager->UpdateStructuredBuffer(TEXT("BoundingBox"), PrimitveBatch.GetBoundingBoxes());
     }
 
     {
+        ID3D11Buffer* SB = nullptr;
         if (UPrimitiveBatch::GetInstance().GetCones().Num() > UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity())
         {
             UPrimitiveBatch::GetInstance().SetAllocatedConeCapacity(UPrimitiveBatch::GetInstance().GetCones().Num());
-
-            ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = renderResourceManager->CreateStructuredBuffer<FCone>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
-            SBSRV = renderResourceManager->CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
-
-            renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("Cone"), SB);
-            renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("Cone"), SBSRV);
+            
+            SB = renderResourceManager->CreateStructuredBuffer<FCone>(TEXT("Cone"), static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
+            renderResourceManager->CreateBufferSRV(TEXT("Cone"), SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedConeCapacity()));
         }
-
-        ID3D11Buffer* SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Cone"));
+        
+        SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Cone"));
         ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("Cone"));
         if (SB != nullptr && SBSRV != nullptr)
-        {
-            renderResourceManager->UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetCones());
-        }
+            renderResourceManager->UpdateStructuredBuffer(TEXT("Cone"), UPrimitiveBatch::GetInstance().GetCones());
     }
 
     {
+        ID3D11Buffer* SB = nullptr;
         if (UPrimitiveBatch::GetInstance().GetSpheres().Num() > UPrimitiveBatch::GetInstance().GetAllocatedSphereCapacity())
         {
             UPrimitiveBatch::GetInstance().SetAllocatedSphereCapacity(UPrimitiveBatch::GetInstance().GetSpheres().Num());
 
             ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = renderResourceManager->CreateStructuredBuffer<FSphere>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedSphereCapacity()));
-            SBSRV = renderResourceManager->CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedSphereCapacity()));
-            
-            renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("Sphere"), SB);
-            renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("Sphere"), SBSRV);
+            SB = renderResourceManager->CreateStructuredBuffer<FSphere>(TEXT("Sphere"), static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedSphereCapacity()));
+            renderResourceManager->CreateBufferSRV(TEXT("Sphere"), SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedSphereCapacity()));
         }
 
-        ID3D11Buffer* SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Sphere"));
+        SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Sphere"));
         ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("Sphere"));
         if (SB != nullptr && SBSRV != nullptr)
-        {
-            renderResourceManager->UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetSpheres());
-        }
+            renderResourceManager->UpdateStructuredBuffer(TEXT("Sphere"), UPrimitiveBatch::GetInstance().GetSpheres());
     }
 
     {
+        ID3D11Buffer* SB = nullptr;
         if (UPrimitiveBatch::GetInstance().GetLines().Num() > UPrimitiveBatch::GetInstance().GetAllocatedLineCapacity())
         {
             UPrimitiveBatch::GetInstance().SetAllocatedLineCapacity(UPrimitiveBatch::GetInstance().GetLines().Num());
 
-            ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = renderResourceManager->CreateStructuredBuffer<FLine>(static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedLineCapacity()));
-            SBSRV = renderResourceManager->CreateBufferSRV(SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedLineCapacity()));
-
-            renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("Line"), SB);
-            renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("Line"), SBSRV);
+            SB = renderResourceManager->CreateStructuredBuffer<FLine>(TEXT("Line"), static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedLineCapacity()));
+            renderResourceManager->CreateBufferSRV(TEXT("Line"), SB, static_cast<uint32>(UPrimitiveBatch::GetInstance().GetAllocatedLineCapacity()));
         }
-
-        ID3D11Buffer* SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Line"));
+        
+        SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("Line"));
         ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("Line"));
         if (SB != nullptr && SBSRV != nullptr)
-        {
-            renderResourceManager->UpdateStructuredBuffer(SB, UPrimitiveBatch::GetInstance().GetLines());
-        }
+            renderResourceManager->UpdateStructuredBuffer(TEXT("Line"), UPrimitiveBatch::GetInstance().GetLines());
     }
 
     {
+        ID3D11Buffer* SB = nullptr;
         if (PrimitveBatch.GetOrientedBoundingBoxes().Num() > PrimitveBatch.GetAllocatedOBBCapacity())
         {
             PrimitveBatch.SetAllocatedOBBCapacity(PrimitveBatch.GetOrientedBoundingBoxes().Num());
-
-            ID3D11Buffer* SB = nullptr;
-            ID3D11ShaderResourceView* SBSRV = nullptr;
-            SB = renderResourceManager->CreateStructuredBuffer<FOBB>(static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
-            SBSRV = renderResourceManager->CreateBufferSRV(SB, static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
-
-            renderResourceManager->AddOrSetSRVStructuredBuffer(TEXT("OBB"), SB);
-            renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("OBB"), SBSRV);
+            
+            SB = renderResourceManager->CreateStructuredBuffer<FOBB>(TEXT("OBB"), static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
+            renderResourceManager->CreateBufferSRV(TEXT("OBB"), SB, static_cast<uint32>(PrimitveBatch.GetAllocatedOBBCapacity()));
         }
-
-        ID3D11Buffer* SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("OBB"));
+        SB = renderResourceManager->GetSRVStructuredBuffer(TEXT("OBB"));
         ID3D11ShaderResourceView* SBSRV = renderResourceManager->GetStructuredBufferSRV(TEXT("OBB"));
         if (SB != nullptr && SBSRV != nullptr)
-        {
-            renderResourceManager->UpdateStructuredBuffer(SB, PrimitveBatch.GetOrientedBoundingBoxes());
-        }
+            renderResourceManager->UpdateStructuredBuffer(TEXT("OBB"), PrimitveBatch.GetOrientedBoundingBoxes());
     }
 }

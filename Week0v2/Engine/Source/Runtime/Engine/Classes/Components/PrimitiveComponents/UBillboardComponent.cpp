@@ -115,12 +115,10 @@ void UBillboardComponent::PostDuplicate()
 
 void UBillboardComponent::CreateQuadTextureVertexBuffer()
 {
-    ID3D11Buffer* VB = UEditorEngine::renderer.GetResourceManager()->CreateImmutableVertexBuffer(quadTextureVertices, sizeof(quadTextureVertices));
-    UEditorEngine::renderer.GetResourceManager()->AddOrSetVertexBuffer(TEXT("QuadVB"), VB);
+    UEditorEngine::renderer.GetResourceManager()->CreateImmutableVertexBuffer(TEXT("QuadVB"), quadTextureVertices, sizeof(quadTextureVertices));
     UEditorEngine::renderer.MappingVBTopology(TEXT("Quad"), TEXT("QuadVB"), sizeof(FVertexTexture), 4);
 
-    ID3D11Buffer* IB = UEditorEngine::renderer.GetResourceManager()->CreateIndexBuffer(quadTextureInices, sizeof(quadTextureInices) / sizeof(uint32));
-    UEditorEngine::renderer.GetResourceManager()->AddOrSetIndexBuffer(TEXT("QuadIB"), IB);
+    ID3D11Buffer* IB = UEditorEngine::renderer.GetResourceManager()->CreateIndexBuffer(TEXT("QuadIB"), quadTextureInices, sizeof(quadTextureInices) / sizeof(uint32));
     UEditorEngine::renderer.MappingIB(TEXT("Quad"), TEXT("QuadIB"), sizeof(quadTextureInices) / sizeof(uint32));
 
     VBIBTopologyMappingName = TEXT("Quad");

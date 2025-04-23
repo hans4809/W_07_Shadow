@@ -62,6 +62,27 @@ public:
 public:
     virtual std::shared_ptr<FActorComponentInfo> GetActorComponentInfo() override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
+public:
+    const FMatrix& GetViewMatrix(int32 Index) const
+    {
+        return ViewMatrix[Index];
+    }
+    void SetViewMatrix(int32 Index, const FMatrix& InViewMatrix)
+    {
+        ViewMatrix[Index] = InViewMatrix;
+    }
 
+    const FMatrix& GetProjectionMatrix(int32 Index) const
+    {
+        return ProjectionMatrix[Index];
+    }
+    void SetProjectionMatrix(int32 Index, const FMatrix& InProjectionMatrix)
+    {
+        ProjectionMatrix[Index] = InProjectionMatrix;
+    }
+
+private:
+    FMatrix ViewMatrix[6];
+    FMatrix ProjectionMatrix[6];
 };
 

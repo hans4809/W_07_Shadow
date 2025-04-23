@@ -38,8 +38,11 @@ void FEditorViewportClient::Initialize(int32 viewportIndex)
 void FEditorViewportClient::Tick(float DeltaTime)
 {
     Input();
-    UpdateViewMatrix();
-    UpdateProjectionMatrix();
+    if (!bLightView)
+    {
+        UpdateProjectionMatrix();
+        UpdateViewMatrix();
+    }
     // UEditorEngine::renderer.GetConstantBufferUpdater().UpdateCameraConstant(
     //     UEditorEngine::renderer.CameraConstantBuffer,
     //     this
@@ -157,8 +160,11 @@ void FEditorViewportClient::ResizeViewport(const DXGI_SWAP_CHAIN_DESC& swapchain
         UE_LOG(LogLevel::Error, "Viewport is nullptr");
     }
     AspectRatio = GEngine->GetAspectRatio(GEngine->graphicDevice.SwapChain);
-    UpdateProjectionMatrix();
-    UpdateViewMatrix();
+    if (!bLightView)
+    {
+        UpdateProjectionMatrix();
+        UpdateViewMatrix();
+    }
 }
 void FEditorViewportClient::ResizeViewport(FRect Top, FRect Bottom, FRect Left, FRect Right)
 {
@@ -169,8 +175,11 @@ void FEditorViewportClient::ResizeViewport(FRect Top, FRect Bottom, FRect Left, 
         UE_LOG(LogLevel::Error, "Viewport is nullptr");
     }
     AspectRatio = GEngine->GetAspectRatio(GEngine->graphicDevice.SwapChain);
-    UpdateProjectionMatrix();
-    UpdateViewMatrix();
+    if (!bLightView)
+    {
+        UpdateProjectionMatrix();
+        UpdateViewMatrix();
+    }
 }
 bool FEditorViewportClient::IsSelected(POINT point)
 {
