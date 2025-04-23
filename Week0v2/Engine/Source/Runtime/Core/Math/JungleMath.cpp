@@ -157,8 +157,6 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     TArray<FVector> corners;
     GetFrustumCornersWS(InCamView, InCamProj, InCascadeNear, InCascadeFar, InCameraNear, InCameraFar, corners);
 
-
-
     // 2. 코너들을 이용해 World-space AABB를 계산합니다.
     FVector worldMins(FLT_MAX, FLT_MAX, FLT_MAX);
     FVector worldMaxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -174,19 +172,8 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     // AABB의 중심 (이 값을 기준으로 Light View의 eye와 target을 결정)
     FVector center = (worldMins + worldMaxs) * 0.5f;
 
-    // 3. World-space AABB의 8개 코너(재구성한 AABB의 코너)를 만듭니다.
-    TArray<FVector> aabbCorners;
-    aabbCorners.Add(FVector(worldMins.x, worldMins.y, worldMins.z));
-    aabbCorners.Add(FVector(worldMaxs.x, worldMaxs.y, worldMins.z));
-    aabbCorners.Add(FVector(worldMins.x, worldMaxs.y, worldMins.z));
-    aabbCorners.Add(FVector(worldMins.x, worldMins.y, worldMaxs.z));
-    aabbCorners.Add(FVector(worldMaxs.x, worldMins.y, worldMins.z));
-    aabbCorners.Add(FVector(worldMaxs.x, worldMins.y, worldMaxs.z));
-    aabbCorners.Add(FVector(worldMaxs.x, worldMaxs.y, worldMaxs.z));
-    aabbCorners.Add(FVector(worldMins.x, worldMaxs.y, worldMaxs.z));
-                                                                  
     // 3) Light View 계산 (up은 Y축)
-    const FVector eye = center - InLightDir.Normalize() * 1000.0f;
+    FVector eye = center - InLightDir.Normalize() * 1000.0f;
     OutLightView = CreateViewMatrix(eye, center, FVector(0,0,1));
 
     // 3) Light View 공간에서 AABB 재계산하여 직교 투영()
@@ -194,7 +181,7 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
     FVector lightMaxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
     for (int i = 0; i < 8; i++)
     {
-        FVector ls = OutLightView.TransformPosition(aabbCorners[i]);
+        FVector ls = OutLightView.TransformPosition(corners[i]);
         lightMins.x = FMath::Min(lightMins.x, ls.x);
         lightMins.y = FMath::Min(lightMins.y, ls.y);
         lightMins.z = FMath::Min(lightMins.z, ls.z);
@@ -203,9 +190,24 @@ void JungleMath::ComputeDirLightVP(const FVector& InLightDir, const FMatrix& InC
         lightMaxs.z = FMath::Max(lightMaxs.z, ls.z);
     }
 
-    // 6. Light Space AABB로부터 Orthographic Projection 매개변수 결정
     float width = lightMaxs.x - lightMins.x;
     float height = lightMaxs.y - lightMins.y;
+    float depth = lightMaxs.z - lightMins.z;
+
+    float marginRatio = 0.5f;
+    float marginX = width * marginRatio;
+    float marginY = height * marginRatio;
+    float marginZ = depth * marginRatio;
+
+    lightMins.x -= marginX;
+    lightMaxs.x += marginX;
+    lightMins.y -= marginY;
+    lightMaxs.y += marginY;
+    lightMins.z -= marginZ;
+    lightMaxs.z += marginZ;
+
+    width = lightMaxs.x - lightMins.x;
+    height = lightMaxs.y - lightMins.y;
     float nearZ = lightMins.z;
     float farZ = lightMaxs.z;
 

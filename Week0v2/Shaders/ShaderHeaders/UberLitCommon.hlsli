@@ -186,10 +186,30 @@ float3 CalculateSpotLight(
 
 Texture2DArray<float> SpotShadowMap : register(t4);
 TextureCubeArray<float> PointShadowMap : register(t6);
+Texture2DArray DirLightShadowMap : register(t7);
 
 bool InRange(float val, float min, float max)
 {
     return (min <= val && val <= max);
+}
+
+float CalculateShadowDirLight(row_major float4x4 LightVP, float3 PixelWorldPos, uint cascadeIndex)
+{
+    float mapDepth = 1.0f;
+    float4 shadowCoord = mul(float4(PixelWorldPos, 1.0), LightVP);
+    float2 uv =
+    {
+        0.5f + shadowCoord.x / shadowCoord.w / 2.f,
+        0.5f - shadowCoord.y / shadowCoord.w / 2.f
+    };
+    if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
+        return 1.0;
+    float shadowDepth = shadowCoord.z / shadowCoord.w;
+    
+    float bias = 0.005f;
+    shadowDepth -= bias;
+    mapDepth = DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(uv, cascadeIndex), shadowDepth).r;
+    return mapDepth;
 }
 
 float CalculateShadowSpotLight(FLightVP light, float3 PixelWorldPos, uint index)
