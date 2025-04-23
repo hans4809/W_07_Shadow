@@ -50,7 +50,8 @@ void SceneBuilder::SpawnPointLightGrid(UWorld* World, int CountX, int CountY, in
 void SceneBuilder::SpawnAppleScene(UWorld* World)
 {
     if (!World) return;
-    int c = 3;
-    SpawnAppleGrid(World, 10, 10, 10, FVector(0.0f, 0.0f, 0.0f), 1.0f);
-    SpawnPointLightGrid(World, c, c, c, FVector(0.5f, 0.5f, 0.5f), 1.0f);
+    int a = 5;
+    int c = 6;
+    SpawnAppleGrid(World, a, a, a, FVector(0.0f, 0.0f, 0.0f), 25.0f);
+    SpawnPointLightGrid(World, c, c, c, FVector(0.5f, 0.5f, 0.5f), 25.0f);
 }

@@ -12,6 +12,8 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "D3D11RHI/FShaderProgram.h"
+#include "Profiling/PlatformTime.h"
+#include "Profiling/StatRegistry.h"
 #include "RenderPass/EditorIconRenderPass.h"
 #include "RenderPass/GizmoRenderPass.h"
 #include "RenderPass/LineBatchRenderPass.h"
@@ -474,20 +476,23 @@ void FRenderer::SetViewMode(const EViewModeIndex evi)
 void FRenderer::AddRenderObjectsToRenderPass(UWorld* InWorld, const std::shared_ptr<FEditorViewportClient>& ActiveViewport) const
 {
     //값을 써줄때 
+    FScopeCycleCounter LightCollectTimer("LightCollect");
     LightManager->CollectLights(InWorld);
     FMatrix View = ActiveViewport->GetViewMatrix();
     FMatrix Proj = ActiveViewport->GetProjectionMatrix();
     FFrustum Frustum = FFrustum::ExtractFrustum(View * Proj);
     LightManager->CullLights(Frustum);
-    
+    FStatRegistry::RegisterResult(LightCollectTimer);
+
     ComputeTileLightCulling->AddRenderObjectsToRenderPass(InWorld);
 
+    FScopeCycleCounter ShadowTimer("ShadowRenderPass");
     DirectionalShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
-
+    
     PointShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
 
     SpotShadowMapRenderPass->AddRenderObjectsToRenderPass(InWorld);
-
+    FStatRegistry::RegisterResult(ShadowTimer);
     if (CurrentViewMode == VMI_Lit_Goroud)
     {
         GoroudRenderPass->AddRenderObjectsToRenderPass(InWorld);

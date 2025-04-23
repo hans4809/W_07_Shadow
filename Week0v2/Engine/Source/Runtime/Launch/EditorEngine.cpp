@@ -65,7 +65,7 @@ int32 UEditorEngine::Init(HWND hwnd)
     graphicDevice.OnResize(hWnd);
     
     SceneMgr = new FSceneMgr();
-    SceneBuilder::SpawnAppleScene(GWorld);
+    //SceneBuilder::SpawnAppleScene(GWorld);
 
     return 0;
 }

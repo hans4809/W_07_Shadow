@@ -256,7 +256,45 @@ float3 ComputeOrientedBoxPosition(uint obIndex, uint edgeIndex, uint vertexID)
 /////////////////////////////////////////////////////////////////////////
 // Sphere
 /////////////////////////////////////////////////////////////////////////
-float3 ComputeSpherePosition(uint globalInstanceID, uint vertexID)
+float3 ComputeSpherePosition(uint sphereInstanceID, uint vertexID)
+{
+    int N = 16;
+    if (N == 0)
+        return float3(0, 0, 0); // 안정성
+
+    uint sphereIndex = sphereInstanceID / (3 * N);
+    uint localLineID = sphereInstanceID % (3 * N);
+
+    FSphereData sphere = g_SphereData[sphereIndex];
+    int ringIndex = localLineID / N;
+    int segmentIndex = localLineID % N;
+
+    float angle = segmentIndex * 6.28318530718 / N;
+    float nextAngle = (segmentIndex + 1) * 6.28318530718 / N;
+
+    float3 dir1, dir2;
+    if (ringIndex == 0)
+    {
+        dir1 = float3(1, 0, 0);
+        dir2 = float3(0, 1, 0);
+    } // XY
+    else if (ringIndex == 1)
+    {
+        dir1 = float3(0, 1, 0);
+        dir2 = float3(0, 0, 1);
+    } // YZ
+    else
+    {
+        dir1 = float3(0, 0, 1);
+        dir2 = float3(1, 0, 0);
+    } // ZX
+
+    float3 posA = sphere.Center + (cos(angle) * dir1 + sin(angle) * dir2) * sphere.Radius;
+    float3 posB = sphere.Center + (cos(nextAngle) * dir1 + sin(nextAngle) * dir2) * sphere.Radius;
+
+    return (vertexID == 0) ? posA : posB;
+}
+/*float3 ComputeSpherePosition(uint globalInstanceID, uint vertexID)
 {
     // 세 평면마다 N개의 선분 → 전체 인스턴스 수 = 3 * N
     int N = 32;
@@ -294,7 +332,7 @@ float3 ComputeSpherePosition(uint globalInstanceID, uint vertexID)
     }
 
     return (vertexID == 0) ? p0 : p1;
-}
+}*/
 
 /////////////////////////////////////////////////////////////////////////
 // Line

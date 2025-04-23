@@ -14,6 +14,7 @@ enum Type : uint64
     SF_UUIDText = 1ULL << 3,
     SF_Fog = 1ULL << 4,
     SF_LightStats = 1ULL << 5,
+    SF_FPSStats = 1ULL << 6,
 };
 }
 

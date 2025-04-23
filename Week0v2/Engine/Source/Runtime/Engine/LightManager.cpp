@@ -43,18 +43,20 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
     {
         if (ViewFrustum.IntersectsSphere(Light->GetComponentLocation(), Light->GetRadius()))
         {
-            VisiblePointLights.Add(Light);
+            if (VisiblePointLights.Num() < MAX_POINT_LIGHTS) {
+                VisiblePointLights.Add(Light);
 
-            Light->ShadowSRVSlice.Empty();
-            for (int i = 0; i < 6; i++)
-            {
-                Light->ShadowSRVSlice.Add(
-                    renderResourceManager->GetShadowMapSliceSRVs(TEXT("PointLightShadowMap"), 
-                        PointLightID*6+i)
-                );
+                Light->ShadowSRVSlice.Empty();
+                for (int i = 0; i < 6; i++)
+                {
+                    if (auto a = renderResourceManager->GetShadowMapSliceSRVs(TEXT("PointLightShadowMap"), PointLightID * 6 + i))
+                    {
+                        Light->ShadowSRVSlice.Add(a);
+                    }
+                }
+                ++PointLightID;
             }
         }
-        ++PointLightID;
     }
 
     int SpotLightID = 0;
@@ -62,14 +64,17 @@ void FLightManager::CullLights(const FFrustum& ViewFrustum)
     {
         if (IsSpotLightInFrustum(Light, ViewFrustum))
         {
-            VisibleSpotLights.Add(Light);
+            if (VisibleSpotLights.Num() < MAX_SPOT_LIGHTS) {
+                VisibleSpotLights.Add(Light);
 
-            Light->ShadowSRVSlice.Empty();
-            Light->ShadowSRVSlice.Add(
-                renderResourceManager->GetShadowMapSliceSRVs(TEXT("SpotLightShadowMap"), SpotLightID)
-            );
+                Light->ShadowSRVSlice.Empty();
+                Light->ShadowSRVSlice.Add(
+                    renderResourceManager->GetShadowMapSliceSRVs(TEXT("SpotLightShadowMap"), SpotLightID)
+                );
+
+                ++SpotLightID;
+            }
         }
-        ++SpotLightID;
     }
 
     if (DirectionalLight)
@@ -88,7 +93,7 @@ void FLightManager::UploadLightConstants()
     FLightingConstants Constants = {};
     FRenderResourceManager* renderResourceManager = GEngine->renderer.GetResourceManager();
 
-    for (int i = 0; i < VisiblePointLights.Num(); ++i)
+    for (int i = 0; i < std::min(VisiblePointLights.Num(), MAX_POINT_LIGHTS); ++i)
     {
         const UPointLightComponent* L = VisiblePointLights[i];
         Constants.PointLights[i].Color = L->GetLightColor();
@@ -99,7 +104,7 @@ void FLightManager::UploadLightConstants()
         Constants.PointLights[i].bCastShadow = L->CanCastShadows();
     }
 
-    for (int i = 0; i < VisibleSpotLights.Num(); ++i)
+    for (int i = 0; i < std::min(VisibleSpotLights.Num(),MAX_SPOT_LIGHTS); ++i)
     {
         const USpotLightComponent* L = VisibleSpotLights[i];
         Constants.SpotLights[i].Color = L->GetLightColor();

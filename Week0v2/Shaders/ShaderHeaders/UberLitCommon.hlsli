@@ -6,8 +6,8 @@
 // 조명 구조체 정의
 // ---------------------------------------------
 // 최대 라이트 수 정의 (컴파일 타임 상수)
-#define NUM_POINT_LIGHT 16
-#define NUM_SPOT_LIGHT 16
+#define NUM_POINT_LIGHT 100
+#define NUM_SPOT_LIGHT 100
 //tile 기반 최대치
 #define MAX_POINTLIGHT_COUNT 16
 
