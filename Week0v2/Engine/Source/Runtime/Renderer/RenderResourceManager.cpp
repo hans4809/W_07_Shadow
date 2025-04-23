@@ -190,6 +190,45 @@ void FRenderResourceManager::ReleaseResources()
         samplerState = nullptr;
     }
 
+    for (auto ShadowMapSliceSRV : SRVShadowMapSlice)
+    {
+        for (ID3D11ShaderResourceView* ShadowMapSRV : ShadowMapSliceSRV.Value)
+        {
+            ShadowMapSRV->Release();
+            ShadowMapSRV = nullptr;
+        }
+    }
+
+    for (auto shadowMap : ShadowMaps)
+    {
+        shadowMap.Value.DSV->Release();
+        shadowMap.Value.DSV = nullptr;
+        
+        shadowMap.Value.SRV->Release();
+        shadowMap.Value.SRV = nullptr;
+
+        shadowMap.Value.ShadowMapTexture2DArray->Release();
+        shadowMap.Value.ShadowMapTexture2DArray = nullptr;
+    }
+    
+    for (auto UAVSB : UAVStructuredBuffers)
+    {
+        UAVSB.Value.Value->Release();
+        UAVSB.Value.Value = nullptr;
+    }
+
+    for (auto SRVSB : SRVStructuredBuffers)
+    {
+        SRVSB.Value.Value->Release();
+        SRVSB.Value.Value = nullptr;
+
+        if (SRVSB.Value.Key != nullptr)
+        {
+            SRVSB.Value.Key->Release();
+            SRVSB.Value.Key = nullptr;
+        }
+    }
+    
     for (auto CB : ConstantBuffers)
     {
         CB.Value->Release();
@@ -207,17 +246,43 @@ void FRenderResourceManager::ReleaseResources()
         VB.Value->Release();
         VB.Value = nullptr;
     }
+
+    for (const auto VS : VertexShaders)
+    {
+        VS.Value->Release();
+    }
+
+    for (const auto PS : PixelShaders)
+    {
+        PS.Value->Release();
+    }
+
+    for (auto CS : RawComputeShaders)
+    {
+        CS.Value->Release();
+        CS.Value = nullptr;
+    }
+
+    for (const auto CS : ComputeShaders)
+    {
+        CS.Value->Release();
+    }
+
+    for (const auto GS : GeometryShaders)
+    {
+        GS.Value->Release();
+    }
 }
 
-ID3D11Buffer* FRenderResourceManager::CreateIndexBuffer(const uint32* indices, const uint32 indicesSize) const
+ID3D11Buffer* FRenderResourceManager::CreateIndexBuffer(const FName InIBName, const uint32* indices, const uint32 indicesSize)
 {
     TArray<uint32> indicesToCopy;
     indicesToCopy.AppendArray(indices, indicesSize);
 
-    return CreateIndexBuffer(indicesToCopy);
+    return CreateIndexBuffer(InIBName, indicesToCopy);
 }
 
-ID3D11Buffer* FRenderResourceManager::CreateIndexBuffer(const TArray<uint32>& indices) const
+ID3D11Buffer* FRenderResourceManager::CreateIndexBuffer(const FName InIBName, const TArray<uint32>& indices)
 {
     D3D11_BUFFER_DESC indexbufferdesc = {};              
     indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       
@@ -234,10 +299,13 @@ ID3D11Buffer* FRenderResourceManager::CreateIndexBuffer(const TArray<uint32>& in
     {
         UE_LOG(LogLevel::Warning, "IndexBuffer Creation faild");
     }
+
+    AddOrSetIndexBuffer(InIBName, indexBuffer);
+    
     return indexBuffer;
 }
 
-ID3D11Buffer* FRenderResourceManager::CreateConstantBuffer(const uint32 InSize, const void* InData) const
+ID3D11Buffer* FRenderResourceManager::CreateConstantBuffer(FName InCBName, const uint32 InSize, const void* InData)
 {
     D3D11_BUFFER_DESC constantBufferDesc = {};   
     constantBufferDesc.ByteWidth = InSize;
@@ -259,10 +327,12 @@ ID3D11Buffer* FRenderResourceManager::CreateConstantBuffer(const uint32 InSize, 
     if (FAILED(hr))
         assert(NULL/*"Create constant buffer failed!"*/);
 
+    AddOrSetConstantBuffer(InCBName, constantBuffer);
+
     return constantBuffer;
 }
 
-ID3D11ShaderResourceView* FRenderResourceManager::CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const
+ID3D11ShaderResourceView* FRenderResourceManager::CreateBufferSRV(FName InBufferName, ID3D11Buffer* pBuffer, UINT numElements)
 {
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_UNKNOWN; // 구조화된 버퍼의 경우 형식은 UNKNOWN으로 지정
@@ -278,10 +348,12 @@ ID3D11ShaderResourceView* FRenderResourceManager::CreateBufferSRV(ID3D11Buffer* 
         assert(false && "CreateStructuredBufferShaderResourceView failed");
         return nullptr;
     }
+
+    AddOrSetSRVStructuredBufferSRV(InBufferName, pSRV);
     return pSRV;
 }
 
-ID3D11UnorderedAccessView* FRenderResourceManager::CreateBufferUAV(ID3D11Buffer* pBuffer, UINT numElements) const
+ID3D11UnorderedAccessView* FRenderResourceManager::CreateBufferUAV(const FName InBufferName, ID3D11Buffer* pBuffer, const UINT numElements)
 {
     D3D11_UNORDERED_ACCESS_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_UNKNOWN; // 구조화된 버퍼의 경우 형식은 UNKNOWN으로 지정
@@ -289,15 +361,17 @@ ID3D11UnorderedAccessView* FRenderResourceManager::CreateBufferUAV(ID3D11Buffer*
     srvDesc.Buffer.FirstElement = 0;
     srvDesc.Buffer.NumElements = numElements;
 
-    ID3D11UnorderedAccessView* pSRV = nullptr;
-    const HRESULT hr = GraphicDevice->Device->CreateUnorderedAccessView(pBuffer, &srvDesc, &pSRV);
+    ID3D11UnorderedAccessView* pUAV = nullptr;
+    const HRESULT hr = GraphicDevice->Device->CreateUnorderedAccessView(pBuffer, &srvDesc, &pUAV);
     if (FAILED(hr))
     {
         // 오류 처리 (필요에 따라 로그 출력 등)
         assert(false && "CreateStructuredBufferShaderResourceView failed");
         return nullptr;
     }
-    return pSRV;
+
+    AddOrSetUAVStructuredBufferUAV(InBufferName, pUAV);
+    return pUAV;
 }
 
 void FRenderResourceManager::CreateVertexShader(const FString& InShaderName, const FString& InFileName, D3D_SHADER_MACRO* pDefines)
@@ -920,63 +994,56 @@ ID3D11ShaderResourceView* FRenderResourceManager::CreateTextureCube2DArraySRV(ID
     return srv;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapTexutre(const FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+void FRenderResourceManager::AddOrSetShadowMapTexutre(const FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
 {
-    if (SRVShadowMap.Contains(InShadowMapName) == false)
+    if (ShadowMaps.Contains(InShadowMapName) == false)
     {
-        SRVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>();
+        ShadowMaps[InShadowMapName] = {};
     }
 
-    if (SRVShadowMap.Contains(InShadowMapName) == true && SRVShadowMap[InShadowMapName].Key != nullptr)
+    if (ShadowMaps.Contains(InShadowMapName) == true && ShadowMaps[InShadowMapName].ShadowMapTexture2DArray != nullptr)
     {
-        SRVShadowMap[InShadowMapName].Key->Release();
+        ShadowMaps[InShadowMapName].ShadowMapTexture2DArray->Release();
     }
-    SRVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
+    ShadowMaps[InShadowMapName].ShadowMapTexture2DArray = InShadowTexture2DArray;
+    
+    const size_t mem = ComputeTexture2DArrayMemory(InShadowTexture2DArray);
+    ShadowMapMemory[InShadowMapName] = mem;
 }
 
-void FRenderResourceManager::AddOrSetDSVShadowMapTexutre(const FName InShadowMapName, ID3D11Texture2D* InShadowTexture2DArray)
+void FRenderResourceManager::AddOrSetShadowMapSRV(const FName InShadowMapName, ID3D11ShaderResourceView* InShadowSRV)
 {
-    if (DSVShadowMap.Contains(InShadowMapName) == false)
+    if (ShadowMaps.Contains(InShadowMapName) == false)
     {
-        DSVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>();
+        ShadowMaps[InShadowMapName] = {};
     }
 
-    if (DSVShadowMap.Contains(InShadowMapName) == true && DSVShadowMap[InShadowMapName].Key != nullptr)
+    if (ShadowMaps.Contains(InShadowMapName) == true && ShadowMaps[InShadowMapName].SRV != nullptr)
     {
-        DSVShadowMap[InShadowMapName].Key->Release();
+        ShadowMaps[InShadowMapName].SRV->Release();
     }
-    DSVShadowMap[InShadowMapName].Key = InShadowTexture2DArray;
+    ShadowMaps[InShadowMapName].SRV = InShadowSRV;
+
+    ShadowMapSRVMemory[InShadowMapName] = DescriptorSize;
 }
 
-void FRenderResourceManager::AddOrSetSRVShadowMapSRV(const FName InShadowMapName, ID3D11ShaderResourceView* InShadowSRV)
+void FRenderResourceManager::AddOrSetShadowMapDSV(const FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
 {
-    if (SRVShadowMap.Contains(InShadowMapName) == false)
+    if (ShadowMaps.Contains(InShadowMapName) == false)
     {
-        SRVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>();
+        ShadowMaps[InShadowMapName] = {};
     }
 
-    if (SRVShadowMap.Contains(InShadowMapName) == true && SRVShadowMap[InShadowMapName].Value != nullptr)
+    if (ShadowMaps.Contains(InShadowMapName) == true && ShadowMaps[InShadowMapName].DSV != nullptr)
     {
-        SRVShadowMap[InShadowMapName].Value->Release();
+        ShadowMaps[InShadowMapName].DSV->Release();
     }
-    SRVShadowMap[InShadowMapName].Value = InShadowSRV;
+    ShadowMaps[InShadowMapName].DSV = InShadowDSV;
+
+    ShadowMapDSVMemory[InShadowMapName] = DescriptorSize;
 }
 
-void FRenderResourceManager::AddOrSetDSVShadowMapDSV(const FName InShadowMapName, ID3D11DepthStencilView* InShadowDSV)
-{
-    if (DSVShadowMap.Contains(InShadowMapName) == false)
-    {
-        DSVShadowMap[InShadowMapName] = TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>();
-    }
-
-    if (DSVShadowMap.Contains(InShadowMapName) == true && DSVShadowMap[InShadowMapName].Value != nullptr)
-    {
-        DSVShadowMap[InShadowMapName].Value->Release();
-    }
-    DSVShadowMap[InShadowMapName].Value = InShadowDSV;
-}
-
-void FRenderResourceManager::AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D11ShaderResourceView*> InShadowSliceSRVs)
+void FRenderResourceManager::AddOrSetSRVShadowMapSlice(const FName InName, const TArray<ID3D11ShaderResourceView*>& InShadowSliceSRVs)
 {
     if (SRVShadowMapSlice.Contains(InName))
     {
@@ -991,13 +1058,15 @@ void FRenderResourceManager::AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D
     }
 
     SRVShadowMapSlice.Add(InName, InShadowSliceSRVs);
+
+    ShadowMapSRVMemory[InName] += DescriptorSize * InShadowSliceSRVs.Num();
 }
 
 ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSRV(const FName InName) const
 {
-    if (SRVShadowMap.Contains(InName))
+    if (ShadowMaps.Contains(InName))
     {
-        return SRVShadowMap[InName].Value;
+        return ShadowMaps[InName].SRV;
     }
 
     return nullptr;
@@ -1005,18 +1074,68 @@ ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSRV(const FName In
 
 ID3D11DepthStencilView* FRenderResourceManager::GetShadowMapDSV(const FName InName) const
 {
-    if (DSVShadowMap.Contains(InName))
+    if (ShadowMaps.Contains(InName))
     {
-        return DSVShadowMap[InName].Value;
+        return ShadowMaps[InName].DSV;
     }
     return nullptr;
 }
 
-ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, int index) const
+ID3D11ShaderResourceView* FRenderResourceManager::GetShadowMapSliceSRVs(const FName InName, const int index) const
 {
     if (SRVShadowMapSlice.Contains(InName))
     {
         return SRVShadowMapSlice[InName][index];
     }
     return nullptr;
+}
+
+size_t FRenderResourceManager::GetShadowMapMemorySize(const FName InName) const
+{
+    return ShadowMaps.Contains(InName) ? ShadowMapMemory[InName] : 0;
+}
+
+size_t FRenderResourceManager::GetShadowMapSRVSize(const FName InName) const
+{
+    return ShadowMaps.Contains(InName) ? ShadowMapSRVMemory[InName] : 0;
+}
+
+size_t FRenderResourceManager::GetShadowMapDSVSize(const FName InName) const
+{
+    return ShadowMaps.Contains(InName) ? ShadowMapDSVMemory[InName] : 0;
+}
+
+size_t FRenderResourceManager::GetBytesPerPixel(const DXGI_FORMAT InFormat)
+{
+    switch (InFormat)
+    {
+    case DXGI_FORMAT_R32_FLOAT:
+        return 4;
+    case DXGI_FORMAT_R32_TYPELESS:
+        return 4;
+    case DXGI_FORMAT_R24G8_TYPELESS:
+        return 4;  // 24비트 깊이 + 8비트 스텐실
+    default: 
+        assert(!"Unsupported format");
+        return 0;
+    }
+}
+
+size_t FRenderResourceManager::ComputeTexture2DArrayMemory(ID3D11Texture2D* InTexture)
+{
+    D3D11_TEXTURE2D_DESC desc;
+    InTexture->GetDesc(&desc);
+
+    const size_t bpp        = GetBytesPerPixel(desc.Format);
+    size_t totalBytes = 0;
+    uint32   w = desc.Width, h = desc.Height;
+    const uint32 d = desc.ArraySize;
+    // 만약 MipLevels > 1 이면 아래 루프로 각 레벨 합산
+    for (uint32 m=0; m<desc.MipLevels; ++m)
+    {
+        totalBytes += static_cast<size_t>(w) * h * d * bpp;
+        w = std::max<uint32>(1, w/2);
+        h = std::max<uint32>(1, h/2);
+    }
+    return totalBytes;
 }

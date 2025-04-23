@@ -9,7 +9,7 @@
 #include "Components/LightComponents/PointLightComponent.h"
 #include "Components/LightComponents/SpotLightComponent.h"
 #include "Components/LightComponents/DirectionalLightComponent.h"
-void FLightManager::CollectLights(UWorld* InWorld)
+void FLightManager::CollectLights(const UWorld* InWorld)
 {
     AllPointLights.Empty();
     AllSpotLights.Empty();
@@ -90,7 +90,7 @@ void FLightManager::UploadLightConstants()
 
     for (int i = 0; i < VisiblePointLights.Num(); ++i)
     {
-        auto* L = VisiblePointLights[i];
+        const UPointLightComponent* L = VisiblePointLights[i];
         Constants.PointLights[i].Color = L->GetLightColor();
         Constants.PointLights[i].Intensity = L->GetIntensity();
         Constants.PointLights[i].Position = L->GetComponentLocation();
@@ -101,7 +101,7 @@ void FLightManager::UploadLightConstants()
 
     for (int i = 0; i < VisibleSpotLights.Num(); ++i)
     {
-        auto* L = VisibleSpotLights[i];
+        const USpotLightComponent* L = VisibleSpotLights[i];
         Constants.SpotLights[i].Color = L->GetLightColor();
         Constants.SpotLights[i].Intensity = L->GetIntensity();
         Constants.SpotLights[i].Position = L->GetComponentLocation();
@@ -134,28 +134,28 @@ void FLightManager::UploadLightConstants()
 
     renderResourceManager->UpdateConstantBuffer(TEXT("FLightingConstants"), &Constants);
 }
-bool FLightManager::IsSpotLightInFrustum(USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum) const
+bool FLightManager::IsSpotLightInFrustum(const USpotLightComponent* SpotLightComp, const FFrustum& CameraFrustum)
 {
-    FVector Apex = SpotLightComp->GetComponentLocation();
-    FVector Dir = SpotLightComp->GetOwner()->GetActorForwardVector().Normalize();
-    float Range = SpotLightComp->GetRadius();
-    float OuterAngleRad = SpotLightComp->GetOuterConeAngle();
+    const FVector Apex = SpotLightComp->GetComponentLocation();
+    const FVector Dir = SpotLightComp->GetOwner()->GetActorForwardVector().Normalize();
+    const float Range = SpotLightComp->GetRadius();
+    const float OuterAngleRad = SpotLightComp->GetOuterConeAngle();
 
-    FVector BaseCenter = Apex + Dir * Range;
-    float BaseRadius = Range * FMath::Tan(OuterAngleRad);
+    const FVector BaseCenter = Apex + Dir * Range;
+    const float BaseRadius = Range * FMath::Tan(OuterAngleRad);
 
     if (CameraFrustum.IntersectsPoint(Apex) || CameraFrustum.IntersectsPoint(BaseCenter))
         return true;
 
-    const int SampleCount = 8;
+    constexpr int SampleCount = 8;
     FVector Right = Dir.Cross(FVector(0, 1, 0));
     if (Right.IsNearlyZero()) Right = Dir.Cross(FVector(1, 0, 0));
-    Right.Normalize();
-    FVector Up = Dir.Cross(Right).Normalize();
+    const FVector normalizedRight = Right.Normalize();
+    const FVector Up = Dir.Cross(normalizedRight).Normalize();
 
     for (int i = 0; i < SampleCount; ++i)
     {
-        float Angle = (2.f * PI * i) / SampleCount;
+        const float Angle = (2.f * PI * i) / SampleCount;
         FVector Offset = (Right * FMath::Cos(Angle) + Up * FMath::Sin(Angle)) * BaseRadius;
         FVector SamplePoint = BaseCenter + Offset;
 
@@ -168,26 +168,27 @@ void FLightManager::VisualizeLights()
 {
     UPrimitiveBatch& Batch = UPrimitiveBatch::GetInstance();
 
-    for (auto* Spot : VisibleSpotLights)
+    for (const USpotLightComponent* Spot : VisibleSpotLights)
     {
         const float Length = Spot->GetRadius();
         const FVector Pos = Spot->GetComponentLocation();
         const FMatrix Model = JungleMath::CreateModelMatrix(/*Pos*/{}, Spot->GetComponentRotation(), Spot->GetComponentScale());
         const FVector4 Color = Spot->GetLightColor();
 
-        float OuterR = tan(Spot->GetOuterConeAngle()) * Length;
-        float InnerR = tan(Spot->GetInnerConeAngle()) * Length;
+        const float OuterR = tan(Spot->GetOuterConeAngle()) * Length;
+        const float InnerR = tan(Spot->GetInnerConeAngle()) * Length;
 
         if (Spot->GetOuterConeAngle() > 0)
             Batch.AddCone(Pos, OuterR, Length, 15, Color, Model);
         if (Spot->GetInnerConeAngle() > 0)
             Batch.AddCone(Pos, InnerR, Length, 15, Color, Model);
     }
-    if (DirectionalLight) {
-        FVector Origin = DirectionalLight->GetComponentLocation();
-        FVector Forward = DirectionalLight->GetOwner()->GetActorForwardVector();
-        FVector Right = DirectionalLight->GetOwner()->GetActorRightVector();
-        FVector4 Color = DirectionalLight->GetLightColor();
+    if (DirectionalLight) 
+    {
+        const FVector Origin = DirectionalLight->GetComponentLocation();
+        const FVector Forward = DirectionalLight->GetOwner()->GetActorForwardVector();
+        const FVector Right = DirectionalLight->GetOwner()->GetActorRightVector();
+        const FVector4 Color = DirectionalLight->GetLightColor();
 
         for (int i = 0; i < 4; ++i)
         {
@@ -195,11 +196,33 @@ void FLightManager::VisualizeLights()
         }
     }
 
-    for (auto* Point : VisiblePointLights)
+    for (const UPointLightComponent* Point : VisiblePointLights)
     {
         if (Point->GetRadius() > 0)
         {
             Batch.AddSphere(Point->GetComponentLocation(), Point->GetRadius(), Point->GetLightColor());
         }
     }
+}
+
+uint32 FLightManager::GetAmbientLightNum() const
+{
+    if (AmbientLight) return 1; 
+    else return 0;
+}
+
+uint32 FLightManager::GetDirectionalLightNum() const
+{
+    if (DirectionalLight) return 1;
+    else return 0;
+}
+
+uint32 FLightManager::GetPointLightNum() const
+{
+    return AllPointLights.Num();
+}
+
+uint32 FLightManager::GetSpotLightNum() const
+{
+    return AllSpotLights.Num();
 }

@@ -27,13 +27,9 @@ FComputeTileLightCulling::FComputeTileLightCulling(const FName& InShaderName)
     ID3D11UnorderedAccessView* TileCullingUAV = renderResourceManager->GetStructuredBufferUAV("TileLightCulling");
     if (TileCullingUAV == nullptr)
     {
-        SB = renderResourceManager->CreateUAVStructuredBuffer<uint32>(1);
-        SBSRV = renderResourceManager->CreateBufferSRV(SB, 1);
-        SBUAV = renderResourceManager->CreateBufferUAV(SB, 1);  
-
-        renderResourceManager->AddOrSetUAVStructuredBuffer(TEXT("TileLightCulling"), SB);
-        renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("TileLightCulling"), SBSRV);
-        renderResourceManager->AddOrSetUAVStructuredBufferUAV(TEXT("TileLightCulling"), SBUAV);
+        SB = renderResourceManager->CreateUAVStructuredBuffer<uint32>(TEXT("TileLightCulling"), 1);
+        SBSRV = renderResourceManager->CreateBufferSRV(TEXT("TileLightCulling"), SB, 1);
+        SBUAV = renderResourceManager->CreateBufferUAV(TEXT("TileLightCulling"), SB, 1);  
     }
 }
 
@@ -86,14 +82,9 @@ void FComputeTileLightCulling::Dispatch(const std::shared_ptr<FViewportClient> I
         int MaxPointLightCount = 16;
         int UAVElementCount = MaxPointLightCount * numTilesX * numTilesY;
         
-        SB = renderResourceManager->CreateUAVStructuredBuffer<UINT>(UAVElementCount);
-        SBSRV = renderResourceManager->CreateBufferSRV(SB, UAVElementCount);
-        SBUAV = renderResourceManager->CreateBufferUAV(SB, UAVElementCount);  
-
-        renderResourceManager->AddOrSetSRVStructuredBufferSRV(TEXT("TileLightCulling"), SBSRV);
-        renderResourceManager->AddOrSetUAVStructuredBufferUAV(TEXT("TileLightCulling"), SBUAV);
-        renderResourceManager->AddOrSetUAVStructuredBuffer(TEXT("TileLightCulling"), SB);
-
+        SB = renderResourceManager->CreateUAVStructuredBuffer<UINT>(TEXT("TileLightCulling"), UAVElementCount);
+        SBSRV = renderResourceManager->CreateBufferSRV(TEXT("TileLightCulling"), SB, UAVElementCount);
+        SBUAV = renderResourceManager->CreateBufferUAV(TEXT("TileLightCulling"), SB, UAVElementCount);  
         TileCullingUAV = SBUAV;
     }
 

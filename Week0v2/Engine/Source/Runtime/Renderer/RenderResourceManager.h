@@ -21,29 +21,29 @@ public:
     void ReleaseResources();
 
     template<typename T>
-    ID3D11Buffer* CreateImmutableVertexBuffer(const TArray<T>& vertices) const;
+    ID3D11Buffer* CreateImmutableVertexBuffer(const FName InVBName, const TArray<T>& vertices);
     template<typename T>
-    ID3D11Buffer* CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const;
+    ID3D11Buffer* CreateImmutableVertexBuffer(const FName InVBName, T* vertices, uint32 arraySize);
     
     template <typename T>
-    ID3D11Buffer* CreateStructuredBuffer(uint32 numElements) const;
+    ID3D11Buffer* CreateStructuredBuffer(FName InSBName, uint32 numElements);
     template <class T>
-    ID3D11Buffer* CreateUAVStructuredBuffer(uint32 numElements) const;
+    ID3D11Buffer* CreateUAVStructuredBuffer(FName InSBName, uint32 numElements);
 
     template<typename T>
-    ID3D11Buffer* CreateStaticVertexBuffer(const TArray<T>& vertices) const;
+    ID3D11Buffer* CreateStaticVertexBuffer(const FName InVBName, const TArray<T>& vertices);
     template<typename T>
-    ID3D11Buffer* CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const;
+    ID3D11Buffer* CreateStaticVertexBuffer(FName InVBName, T* vertices, uint32 arraySize);
     
     template<typename T>
-    ID3D11Buffer* CreateDynamicVertexBuffer(const TArray<T>& vertices) const;
+    ID3D11Buffer* CreateDynamicVertexBuffer(FName InVBName, const TArray<T>& vertices);
     template<typename T>
-    ID3D11Buffer* CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const;
+    ID3D11Buffer* CreateDynamicVertexBuffer(const FName InVBName, T* vertices, uint32 arraySize);
     
-    ID3D11Buffer* CreateIndexBuffer(const uint32* indices, uint32 indicesSize) const;
-    ID3D11Buffer* CreateIndexBuffer(const TArray<uint32>& indices) const;
+    ID3D11Buffer* CreateIndexBuffer(FName InIBName, const uint32* indices, uint32 indicesSize);
+    ID3D11Buffer* CreateIndexBuffer(FName InIBName, const TArray<uint32>& indices);
     
-    ID3D11Buffer* CreateConstantBuffer(uint32 InSize, const void* InData = nullptr) const;
+    ID3D11Buffer* CreateConstantBuffer(FName InCBName, uint32 InSize, const void* InData = nullptr);
     
     template<typename T>
     void UpdateConstantBuffer(ID3D11Buffer* InBuffer, const T* InData = nullptr);
@@ -53,14 +53,17 @@ public:
 
     template<typename T>
     void UpdateDynamicVertexBuffer(ID3D11Buffer* InBuffer, T* vertices, const uint32 numVertices) const;
+
+    template<typename T>
+    void UpdateDynamicVertexBuffer(FName InVBName, T* vertices, const uint32 numVertices);
     
     template <typename T>
     void UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const;
     template <typename T>
     void UpdateStructuredBuffer(FName SBName, const TArray<T>& Data);
     
-    ID3D11ShaderResourceView* CreateBufferSRV(ID3D11Buffer* pBuffer, UINT numElements) const;
-    ID3D11UnorderedAccessView* CreateBufferUAV(ID3D11Buffer* pBuffer, UINT numElements) const;
+    ID3D11ShaderResourceView* CreateBufferSRV(FName InBufferName, ID3D11Buffer* pBuffer, UINT numElements);
+    ID3D11UnorderedAccessView* CreateBufferUAV(FName InBufferName, ID3D11Buffer* pBuffer, UINT numElements);
 
     ID3D11SamplerState* GetSamplerState(ESamplerType InType) const { return SamplerStates[static_cast<uint32>(InType)]; }
     ID3D11RasterizerState* GetRasterizerState(ERasterizerState InState) const { return RasterizerStates[static_cast<uint32>(InState)]; }
@@ -125,30 +128,51 @@ public:
 
     void HotReloadShaders();
 public:
-        //Create ShadowMap
-        ID3D11Texture2D* CreateTexture2DArray(const uint32 Width, const uint32 Height, const uint32 ViewDimension) const;
-        ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
-        ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
-        TArray<ID3D11ShaderResourceView*> CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, const uint32 SliceCount) const;
+    //TODO : 리팩토링 필요
+    //Create ShadowMap
+    ID3D11Texture2D* CreateTexture2DArray(const uint32 Width, const uint32 Height, const uint32 ViewDimension) const;
+    ID3D11DepthStencilView* CreateTexture2DArrayDSV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
+    ID3D11ShaderResourceView* CreateTexture2DArraySRV(ID3D11Texture2D* TextureArray, const uint32 ViewDimension) const;
+    TArray<ID3D11ShaderResourceView*> CreateTexture2DArraySliceSRVs(ID3D11Texture2D* TextureArray, const uint32 SliceCount) const;
 
-        ID3D11Texture2D* CreateTextureCube2DArray(uint32 Width, uint32 Height, uint32 CubeCount) const;
-        ID3D11DepthStencilView* CreateTextureCube2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
-        ID3D11ShaderResourceView* CreateTextureCube2DArraySRV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
+    ID3D11Texture2D* CreateTextureCube2DArray(uint32 Width, uint32 Height, uint32 CubeCount) const;
+    ID3D11DepthStencilView* CreateTextureCube2DArrayDSV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
+    ID3D11ShaderResourceView* CreateTextureCube2DArraySRV(ID3D11Texture2D* TextureArray, uint32 CubeCount) const;
 
-        //AddOrSet ShadowMap
-        void AddOrSetSRVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
-        void AddOrSetDSVShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
-        void AddOrSetSRVShadowMapSRV(FName InSRVName, ID3D11ShaderResourceView* InShadowSRV);
-        void AddOrSetDSVShadowMapDSV(FName InDSVName, ID3D11DepthStencilView* InShadowDSV);
-        void AddOrSetSRVShadowMapSlice(FName InName, TArray<ID3D11ShaderResourceView*> InShadowSliceSRVs);
-        //Get ShadowMap
-        ID3D11ShaderResourceView* GetShadowMapSRV(const FName InName) const;
-        ID3D11DepthStencilView* GetShadowMapDSV(const FName InName) const;
-        ID3D11ShaderResourceView* GetShadowMapSliceSRVs(const FName InName, int index) const;
+    //AddOrSet ShadowMap
+    void AddOrSetShadowMapTexutre(FName InTextureName, ID3D11Texture2D* InShadowTexture2DArray);
+    void AddOrSetShadowMapSRV(FName InSRVName, ID3D11ShaderResourceView* InShadowSRV);
+    void AddOrSetShadowMapDSV(FName InDSVName, ID3D11DepthStencilView* InShadowDSV);
+    void AddOrSetSRVShadowMapSlice(FName InName, const TArray<ID3D11ShaderResourceView*>& InShadowSliceSRVs);
+    //Get ShadowMap
+    ID3D11ShaderResourceView* GetShadowMapSRV(const FName InName) const;
+    ID3D11DepthStencilView* GetShadowMapDSV(const FName InName) const;
+    ID3D11ShaderResourceView* GetShadowMapSliceSRVs(const FName InName, int index) const;
+
+    size_t GetShadowMapMemorySize(const FName InName) const;
+    size_t GetShadowMapSRVSize(const FName InName) const;
+    size_t GetShadowMapDSVSize(const FName InName) const;
 private:
-    TMap<FName, TPair<ID3D11Texture2D*, ID3D11ShaderResourceView*>> SRVShadowMap;
-    TMap<FName, TPair<ID3D11Texture2D*, ID3D11DepthStencilView*>> DSVShadowMap;
+    
+    struct ShadowMap
+    {
+        ID3D11Texture2D* ShadowMapTexture2DArray;
+        ID3D11ShaderResourceView* SRV;
+        ID3D11DepthStencilView* DSV;
+    };
+    
+    TMap<FName, ShadowMap> ShadowMaps;
     TMap<FName, TArray<ID3D11ShaderResourceView*>> SRVShadowMapSlice;
+
+    size_t GetBytesPerPixel(DXGI_FORMAT InFormat);
+    size_t ComputeTexture2DArrayMemory(ID3D11Texture2D* InTexture);
+
+    // (추정) 뷰 하나당 Descriptor 크기
+    static constexpr size_t DescriptorSize = 64;
+    
+    TMap<FName, size_t> ShadowMapMemory;
+    TMap<FName, size_t> ShadowMapSRVMemory;
+    TMap<FName, size_t> ShadowMapDSVMemory;
 private:
     FGraphicsDevice* GraphicDevice = nullptr;
     
@@ -179,7 +203,7 @@ private:
 };
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateImmutableVertexBuffer(const TArray<T>& vertices) const
+ID3D11Buffer* FRenderResourceManager::CreateImmutableVertexBuffer(const FName InVBName, const TArray<T>& vertices)
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
@@ -197,21 +221,24 @@ ID3D11Buffer* FRenderResourceManager::CreateImmutableVertexBuffer(const TArray<T
         return nullptr;
     }
 
+    AddOrSetVertexBuffer(InVBName, vertexBuffer);
     
     return vertexBuffer;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateImmutableVertexBuffer(T* vertices, uint32 arraySize) const
+ID3D11Buffer* FRenderResourceManager::CreateImmutableVertexBuffer(const FName InVBName, T* vertices, uint32 arraySize)
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);
 
-    return CreateImmutableVertexBuffer(verticeArray);
+    ID3D11Buffer* VB = CreateImmutableVertexBuffer(InVBName, verticeArray);
+
+    return VB;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateStructuredBuffer(const uint32 numElements) const
+ID3D11Buffer* FRenderResourceManager::CreateStructuredBuffer(const FName InSBName, const uint32 numElements)
 {
     D3D11_BUFFER_DESC bufferDesc = {};
     bufferDesc.Usage = D3D11_USAGE_DYNAMIC; // CPU가 데이터를 업데이트할 수 있도록 설정
@@ -228,11 +255,13 @@ ID3D11Buffer* FRenderResourceManager::CreateStructuredBuffer(const uint32 numEle
         UE_LOG(LogLevel::Warning, "Structured Buffer Creation failed");
         return nullptr;
     }
+
+    AddOrSetSRVStructuredBuffer(InSBName, buffer);
     return buffer;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateUAVStructuredBuffer(const uint32 numElements) const
+ID3D11Buffer* FRenderResourceManager::CreateUAVStructuredBuffer(const FName InSBName, const uint32 numElements)
 {
     D3D11_BUFFER_DESC bufferDesc = {};
     bufferDesc.ByteWidth = sizeof(T) * numElements;
@@ -247,11 +276,13 @@ ID3D11Buffer* FRenderResourceManager::CreateUAVStructuredBuffer(const uint32 num
         UE_LOG(LogLevel::Warning, "Structured Buffer Creation failed");
         return nullptr;
     }
+
+    AddOrSetUAVStructuredBuffer(InSBName, buffer);
     return buffer;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateStaticVertexBuffer(const TArray<T>& vertices) const
+ID3D11Buffer* FRenderResourceManager::CreateStaticVertexBuffer(const FName InVBName, const TArray<T>& vertices)
 {
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.Usage = D3D11_USAGE_DEFAULT;  // 정적 버퍼: 한 번 생성 후 업데이트하지 않음
@@ -269,20 +300,24 @@ ID3D11Buffer* FRenderResourceManager::CreateStaticVertexBuffer(const TArray<T>& 
         UE_LOG(LogLevel::Warning, "Static Vertex Buffer Creation failed");
         return nullptr;
     }
+
+    AddOrSetVertexBuffer(InVBName, pVertexBuffer);
     return pVertexBuffer;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateStaticVertexBuffer(T* vertices, uint32 arraySize) const
+ID3D11Buffer* FRenderResourceManager::CreateStaticVertexBuffer(const FName InVBName, T* vertices, uint32 arraySize)
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);
 
-    return CreateStaticVertexBuffer(verticeArray);
+    ID3D11Buffer* VB = CreateStaticVertexBuffer(InVBName, verticeArray);
+
+    return VB;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateDynamicVertexBuffer(const TArray<T>& vertices) const
+ID3D11Buffer* FRenderResourceManager::CreateDynamicVertexBuffer(const FName InVBName, const TArray<T>& vertices)
 {
     D3D11_BUFFER_DESC vertexbufferdesc = {};
     vertexbufferdesc.ByteWidth = sizeof(T) * vertices.Num();
@@ -301,16 +336,21 @@ ID3D11Buffer* FRenderResourceManager::CreateDynamicVertexBuffer(const TArray<T>&
         UE_LOG(LogLevel::Warning, "VertexBuffer Creation failed");
         return nullptr;
     }
+
+    AddOrSetVertexBuffer(InVBName, vertexBuffer);
+    
     return vertexBuffer;
 }
 
 template <typename T>
-ID3D11Buffer* FRenderResourceManager::CreateDynamicVertexBuffer(T* vertices, uint32 arraySize) const
+ID3D11Buffer* FRenderResourceManager::CreateDynamicVertexBuffer(const FName InVBName, T* vertices, uint32 arraySize)
 {
     TArray<T> verticeArray;
     verticeArray.AppendArray(vertices, arraySize);
 
-    return CreateDynamicVertexBuffer(verticeArray);
+    ID3D11Buffer* VB =  CreateDynamicVertexBuffer(InVBName, verticeArray);
+    
+    return VB;
 }
 
 template <typename T>
@@ -353,6 +393,20 @@ void FRenderResourceManager::UpdateDynamicVertexBuffer(ID3D11Buffer* InBuffer, T
 }
 
 template <typename T>
+void FRenderResourceManager::UpdateDynamicVertexBuffer(FName InVBName, T* vertices, const uint32 numVertices)
+{
+    ID3D11Buffer* VB = GetVertexBuffer(InVBName);
+
+    if (VB == nullptr)
+    {
+        UE_LOG(LogLevel::Error, TEXT("UpdateDynamicVertexBuffer 호출: 키 %s에 해당하는 buffer가 없습니다."), InVBName);
+        return;
+    }
+    
+    UpdateDynamicVertexBuffer(VB, vertices, numVertices);
+}
+
+template <typename T>
 void FRenderResourceManager::UpdateStructuredBuffer(ID3D11Buffer* pBuffer, const TArray<T>& Data) const
 {
     if (!pBuffer)
@@ -382,7 +436,7 @@ void FRenderResourceManager::UpdateStructuredBuffer(const FName SBName, const TA
 
     if (SB == nullptr)
     {
-        UE_LOG(LogLevel::Error, TEXT("UpdateStructuredBuffer 호출: 키 %s에 해당하는 buffer가 없습니다."), SBName);
+        UE_LOG(LogLevel::Error, TEXT("UpdateStructuredBuffer 호출: 키 %s에 해당하는 buffer가 없습니다."), SBName.ToString());
         return;
     }
     
