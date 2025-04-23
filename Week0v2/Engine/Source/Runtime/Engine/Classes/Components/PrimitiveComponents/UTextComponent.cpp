@@ -162,9 +162,7 @@ void UTextComponent::SetText(const FWString& _text)
 	quad.Add(FVector(lastX,-1.0f,0.0f));
 
 	//CreateTextTextureVertexBuffer(vertexTextureArr,byteWidth);
-    ID3D11Buffer* VB = nullptr;
-    
-    VB = GetEngine()->renderer.GetResourceManager()->CreateImmutableVertexBuffer<FVertexTexture>(vertexTextureArr);
+
 
     int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, 
                                      text.c_str(), -1, 
@@ -176,10 +174,9 @@ void UTextComponent::SetText(const FWString& _text)
                         &result[0], sizeNeeded, 
                         nullptr, nullptr);
 
-    FString textName = result;
-
     result.pop_back(); // 널 문자 제거
-    GetEngine()->renderer.GetResourceManager()->AddOrSetVertexBuffer(textName, VB);
+    const FString textName = result;
+    GetEngine()->renderer.GetResourceManager()->CreateImmutableVertexBuffer<FVertexTexture>(textName, vertexTextureArr);
     GetEngine()->renderer.MappingVBTopology(textName, textName, sizeof(FVertexSimple), vertexTextureArr.Num());
 }
 

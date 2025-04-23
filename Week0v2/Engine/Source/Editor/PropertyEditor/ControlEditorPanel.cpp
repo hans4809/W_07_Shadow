@@ -19,6 +19,7 @@
 
 #include "LightManager.h"
 #include "Actors/AmbientLightActor.h"
+#include "Components/LightComponents/AmbientLightComponent.h"
 #include "Components/PrimitiveComponents/UParticleSubUVComp.h"
 #include "Components/PrimitiveComponents/UTextComponent.h"
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
@@ -666,23 +667,70 @@ void ControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
 void ControlEditorPanel::CreateLightStats()
 {
     auto ActiveViewport = GEngine->GetLevelEditor()->GetActiveViewportClient();
+    FRenderer& Renderer = GEngine->renderer;
+    FRenderResourceManager* renderResourceManager = Renderer.GetResourceManager();
+    
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_LightStats))
     {
         if (ImGui::Begin("Light Stats", nullptr))
         {
-            FLightManager* lightManager = GEngine->renderer.LightManager;
-            const int AmbientLightNum = lightManager->GetAmbientLightNum();
-            const int DirectionalLightNum = lightManager->GetDirectionalLightNum();
-            const int PointLightNum = lightManager->GetPointLightNum();
-            const int SpotLightNum = lightManager->GetSpotLightNum();
-            const int TotalNum    = AmbientLightNum + DirectionalLightNum + PointLightNum + SpotLightNum;
+            // 2) 초록색 텍스트 모드 진입
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0,1,0,1));
+            // (선택) 칼럼 사이 여백 조절
+            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(10,4));
 
-            ImGui::Text("Ambient Lights     : %d", AmbientLightNum);
-            ImGui::Text("Directional Lights : %d", DirectionalLightNum);
-            ImGui::Text("Point Lights       : %d", PointLightNum);
-            ImGui::Text("Spot Lights        : %d", SpotLightNum);
-            ImGui::Separator();
-            ImGui::Text("Total Lights       : %d", TotalNum);
+            // 3) 2열짜리 테이블 생성
+            if (ImGui::BeginTable("##lightStatsTable", 3, ImGuiTableFlags_Resizable|ImGuiTableFlags_NoBordersInBody))
+            {
+                // 헤더
+                ImGui::TableSetupColumn("Type",         ImGuiTableColumnFlags_WidthFixed, 150);
+                ImGui::TableSetupColumn("Count",        ImGuiTableColumnFlags_WidthFixed,  60);
+                ImGui::TableSetupColumn("Memory (KB/MB)",  ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableHeadersRow();
+
+                const FLightManager* lightManager = GEngine->renderer.LightManager;
+                const int AmbientLightNum = lightManager->GetAmbientLightNum();
+                const int DirectionalLightNum = lightManager->GetDirectionalLightNum();
+                const int PointLightNum = lightManager->GetPointLightNum();
+                const int SpotLightNum = lightManager->GetSpotLightNum();
+                const int TotalNum    = AmbientLightNum + DirectionalLightNum + PointLightNum + SpotLightNum;
+
+
+                const size_t AmbientBytes     = AmbientLightNum     * sizeof(UAmbientLightComponent);
+                const size_t DirectionalBytes = DirectionalLightNum * sizeof(UDirectionalLightComponent) + renderResourceManager->GetShadowMapMemorySize(TEXT("DirLightShadowMap"));
+                const size_t PointBytes       = PointLightNum       * sizeof(UPointLightComponent) + 6 * sizeof(ID3D11ShaderResourceView) + renderResourceManager->GetShadowMapMemorySize(TEXT("PointLightShadowMap"));
+                const size_t SpotBytes        = SpotLightNum        * sizeof(USpotLightComponent) + sizeof(ID3D11ShaderResourceView) + renderResourceManager->GetShadowMapMemorySize(TEXT("SpotLightShadowMap"));
+
+                const size_t TotalBytes = AmbientBytes + DirectionalBytes + PointBytes + SpotBytes;
+
+                struct Row { const char* name; int count; size_t bytes; };
+                Row rows[] =
+                {
+                    {"Ambient", AmbientLightNum, AmbientBytes},
+                    {"Directional", DirectionalLightNum, DirectionalBytes},
+                    {"Point", PointLightNum, PointBytes},
+                    {"Spot", SpotLightNum, SpotBytes},
+                    {"Total", TotalNum, TotalBytes}
+                };
+
+                for (const auto &row : rows)
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s Lights",  row.name);
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%d",         row.count);
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%.2f KB / %.2f MB",    row.bytes / 1024.0f, row.bytes / 1024.0f / 1024.0f);
+                }
+                
+                ImGui::EndTable();
+            }
+            
+            // 4) 스타일 복구
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+            
             // 창 우측 상단 닫기 버튼 누르면 비트 끄기
             if (ImGui::Button("Close"))
             {

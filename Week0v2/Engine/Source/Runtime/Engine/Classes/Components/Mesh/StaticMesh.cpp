@@ -40,15 +40,13 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     if (verticeNum <= 0) return;
 
     FRenderResourceManager* renderResourceManager = GetEngine()->renderer.GetResourceManager();
-    VB = renderResourceManager->CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->Vertices);
-    renderResourceManager->AddOrSetVertexBuffer(staticMeshRenderData->DisplayName, VB);
+    VB = renderResourceManager->CreateImmutableVertexBuffer<FVertexSimple>(staticMeshRenderData->DisplayName, staticMeshRenderData->Vertices);
     GetEngine()->renderer.MappingVBTopology(staticMeshRenderData->DisplayName, staticMeshRenderData->DisplayName, sizeof(FVertexSimple), verticeNum);
     
     const uint32 indexNum = staticMeshRenderData->Indices.Num();
     if (indexNum > 0)
     {
-        IB = renderResourceManager->CreateIndexBuffer(staticMeshRenderData->Indices);
-        renderResourceManager->AddOrSetIndexBuffer(staticMeshRenderData->DisplayName, IB);
+        IB = renderResourceManager->CreateIndexBuffer(staticMeshRenderData->DisplayName, staticMeshRenderData->Indices);
     }
     GetEngine()->renderer.MappingVBTopology(staticMeshRenderData->DisplayName, staticMeshRenderData->DisplayName, sizeof(FVertexSimple), verticeNum);
     GetEngine()->renderer.MappingIB(staticMeshRenderData->DisplayName, staticMeshRenderData->DisplayName, indexNum);

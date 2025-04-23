@@ -168,8 +168,7 @@ void FRenderer::CreateMappedCB(TMap<FShaderConstantKey, uint32>& ShaderStageToCB
         ShaderStageToCB[{Stage, item.Name}] = item.BindSlot;
         if (RenderResourceManager->GetConstantBuffer(item.Name) == nullptr)
         {
-            ID3D11Buffer* ConstantBuffer = RenderResourceManager->CreateConstantBuffer(item.ByteWidth);
-            RenderResourceManager->AddOrSetConstantBuffer(item.Name, ConstantBuffer);
+            RenderResourceManager->CreateConstantBuffer(item.Name, item.ByteWidth);
         }
     }
 }

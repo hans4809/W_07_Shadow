@@ -16,11 +16,8 @@ FSpotShadowMapRenderPass::FSpotShadowMapRenderPass(const FName& InShaderName)
     
     ID3D11Buffer* SB = nullptr;
     ID3D11ShaderResourceView* SBSRV = nullptr;
-    SB = renderResourceManager->CreateStructuredBuffer<FMatrix>(MAX_SPOT_LIGHTS);
-    SBSRV = renderResourceManager->CreateBufferSRV(SB, MAX_SPOT_LIGHTS);
-
-    renderResourceManager->AddOrSetSRVStructuredBuffer(SpotLightVPMat, SB);
-    renderResourceManager->AddOrSetSRVStructuredBufferSRV(SpotLightVPMat, SBSRV);
+    SB = renderResourceManager->CreateStructuredBuffer<FMatrix>(SpotLightVPMat, MAX_SPOT_LIGHTS);
+    SBSRV = renderResourceManager->CreateBufferSRV(SpotLightVPMat, SB, MAX_SPOT_LIGHTS);
 
     CreateShadowMapResource();
 
@@ -152,10 +149,9 @@ void FSpotShadowMapRenderPass::CreateShadowMapResource()
     TArray<ID3D11ShaderResourceView*> Texture2DArraySliceSRVs = 
         renderResourceManager->CreateTexture2DArraySliceSRVs(ShadowMapTexture2DArray, MAX_SPOT_LIGHTS);
 
-    renderResourceManager->AddOrSetSRVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetSRVShadowMapSRV(SpotLightShadowMap, ShadowMapSRVArray);
-    renderResourceManager->AddOrSetDSVShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
-    renderResourceManager->AddOrSetDSVShadowMapDSV(SpotLightShadowMap, ShadowMapDSVArray);
+    renderResourceManager->AddOrSetShadowMapTexutre(SpotLightShadowMap, ShadowMapTexture2DArray);
+    renderResourceManager->AddOrSetShadowMapSRV(SpotLightShadowMap, ShadowMapSRVArray);
+    renderResourceManager->AddOrSetShadowMapDSV(SpotLightShadowMap, ShadowMapDSVArray);
     renderResourceManager->AddOrSetSRVShadowMapSlice(SpotLightShadowMap, Texture2DArraySliceSRVs);
 }
 
