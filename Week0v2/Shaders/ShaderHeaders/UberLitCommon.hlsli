@@ -209,7 +209,7 @@ float CalculateShadowDirLight(row_major float4x4 LightVP, float3 PixelWorldPos, 
         return 1.0;
     
     float Light = 0.f;
-    float OffsetX = 1.f / 4096;
+    float OffsetX = 1.f / 4096; //해상도 4096 하드코딩
     float OffsetY = 1.f / 4096;
     for (int i = -1; i <= 1; i++)
     {
@@ -222,8 +222,7 @@ float CalculateShadowDirLight(row_major float4x4 LightVP, float3 PixelWorldPos, 
             };
             if (InRange(SampleCoord.x, 0.f, 1.f) && InRange(SampleCoord.y, 0.f, 1.f))
             {
-                float bias = 0.001;
-                Light += DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, cascadeIndex), shadowDepth - bias).r;
+                Light += DirLightShadowMap.SampleCmpLevelZero(linearComparisionSampler, float3(SampleCoord, cascadeIndex), shadowDepth).r;
             }
             else
             {
